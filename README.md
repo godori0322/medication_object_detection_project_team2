@@ -1,2 +1,1 @@
-# medication_object_detection_project_team2
-Object detection project of oral medications / Team 2
+## 경구약제 이미지 객체 검출(Object Detection) 프로젝트
