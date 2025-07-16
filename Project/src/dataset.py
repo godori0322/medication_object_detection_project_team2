@@ -1,12 +1,20 @@
 import os
 import json
-from PIL import Image
 import torch
+import numpy as np
+from PIL import Image
 from torch.utils.data import Dataset
 from pathlib import Path
-import numpy as np
+
+# 데이터 증강을 위한 Albumentations 라이브러리 (선택 사항)
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
+
 
 class PillDataset(Dataset):
+    """
+    개별 JSON 파일로 구성된 경구약제 데이터셋을 위한 커스텀 클래스
+    """
     def __init__(self, image_dir, annotation_dir, transforms=None):
         """
         Args:
@@ -29,45 +37,55 @@ class PillDataset(Dataset):
         json_path = self.json_paths[idx]
         
         # JSON 파일에서 어노테이션 정보 로드
-        with open(json_path, 'r') as f:
+        with open(json_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
-        # 이미지 파일명은 JSON 파일명과 동일하다고 가정 (확장자만 다름)
-        image_filename = json_path.stem + '.png' # 또는 '.jpg' 등
+        # 이미지 파일명은 JSON 파일명에서 확장자만 변경하여 구성
+        image_filename = json_path.stem + '.png'
         image_path = self.image_dir / image_filename
-        image = Image.open(image_path).convert("RGB")
+        
+        # 이미지를 Numpy 배열로 불러오기 (transforms 적용을 위해)
+        image = np.array(Image.open(image_path).convert("RGB"))
         
         boxes = []
         labels = []
         
         # JSON 파일 내의 'annotations' 리스트에서 정보 추출
         for ann in data.get('annotations', []):
-            bbox = ann['bbox']
-            # COCO 형식 [x, y, w, h] -> PyTorch 형식 [xmin, ymin, xmax, ymax]
-            xmin, ymin, xmax, ymax = bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3]
-            boxes.append([xmin, ymin, xmax, ymax])
-            labels.append(ann['category_id'])
+            bbox = ann.get('bbox')
+            category_id = ann.get('category_id')
+            
+            if bbox and category_id is not None:
+                # COCO 형식 [x, y, w, h] -> [xmin, ymin, xmax, ymax] 형식으로 변환
+                xmin, ymin = bbox[0], bbox[1]
+                xmax, ymax = xmin + bbox[2], ymin + bbox[3]
+                boxes.append([xmin, ymin, xmax, ymax])
+                labels.append(category_id)
 
-        # 데이터를 torch.Tensor로 변환
-        boxes = torch.as_tensor(boxes, dtype=torch.float32)
-        labels = torch.as_tensor(labels, dtype=torch.int64)
+        target = {"boxes": boxes, "labels": labels}
 
-        target = {}
-        target["boxes"] = boxes
-        target["labels"] = labels
-        # image_id는 파일명에서 추출하거나 인덱스를 사용할 수 있습니다.
+        # --- 데이터 증강(Data Augmentation) 적용 부분 ---
+        if self.transforms:
+            # Albumentations 라이브러리를 사용할 경우
+            transformed = self.transforms(image=image, bboxes=target['boxes'], labels=target['labels'])
+            image = transformed['image']
+            target['boxes'] = torch.tensor(transformed['bboxes'], dtype=torch.float32)
+            target['labels'] = torch.tensor(transformed['labels'], dtype=torch.int64)
+            
+            # 증강 후 바운딩 박스가 사라졌을 경우 처리
+            if len(target['boxes']) == 0:
+                target['boxes'] = torch.zeros((0, 4), dtype=torch.float32)
+        else:
+            # 기본 전처리 (Numpy -> Tensor)
+            image = torch.as_tensor(image, dtype=torch.float32).permute(2, 0, 1) / 255.0
+            target['boxes'] = torch.as_tensor(target['boxes'], dtype=torch.float32)
+            target['labels'] = torch.as_tensor(target['labels'], dtype=torch.int64)
+
+        # 바운딩 박스가 없는 이미지에 대한 예외 처리
+        if len(target['boxes']) == 0:
+            target['boxes'] = torch.zeros((0, 4), dtype=torch.float32)
+            
+        # image_id 등 추가 정보 (필요시)
         target["image_id"] = torch.tensor([idx])
-
-        # 바운딩 박스가 없는 경우, 빈 텐서를 할당하여 에러 방지
-        if len(boxes) == 0:
-            target["boxes"] = torch.zeros((0, 4), dtype=torch.float32)
-
-        # transforms 유무와 관계없이 이미지를 항상 Tensor로 변환
-        # (간단한 ToTensor 역할)
-        image = torch.as_tensor(np.array(image), dtype=torch.float32).permute(2, 0, 1) / 255.0
-
-        # 만약 복잡한 transforms가 있다면 여기서 추가 적용 가능
-        # if self.transforms:
-        #     image, target = self.transforms(image, target)
-
+        
         return image, target
