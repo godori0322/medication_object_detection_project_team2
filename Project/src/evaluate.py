@@ -1,5 +1,3 @@
-# src/evaluate.py
-
 import torch
 import os
 import pandas as pd

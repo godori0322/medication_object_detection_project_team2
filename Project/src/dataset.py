@@ -1,5 +1,3 @@
-# src/dataset.py
-
 import os
 import json
 from PIL import Image
