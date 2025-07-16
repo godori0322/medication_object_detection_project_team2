@@ -10,8 +10,8 @@ from PIL import Image, ImageDraw, ImageFont # ImageDraw, ImageFont 임포트 추
 
 from . import config
 from .dataset import PillDataset
-from .model import get_detection_model
-from .utils import get_class_mapping
+from models.model import get_detection_model
+from utils.class_mapping import get_class_mapping
 
 # --- 폰트 경로 지정 (가장 일반적인 우분투 경로) ---
 # 이 경로에 폰트가 없으면, 설치된 경로로 수정해야 할 수 있습니다.

@@ -7,8 +7,8 @@ import matplotlib.pyplot as plt # Matplotlib 임포트
 
 # src 폴더의 다른 모듈과 설정 파일 임포트
 from . import config
-from .dataset import PillDataset
-from .model import get_detection_model
+from .dataloader import data_loader
+from models.model import get_detection_model
 
 def collate_fn(batch):
     return tuple(zip(*batch))
@@ -16,22 +16,6 @@ def collate_fn(batch):
 def main():
     device = torch.device(config.DEVICE)
     
-    # 1. 데이터셋 및 데이터로더
-    print("Loading data...")
-    dataset = PillDataset(
-        image_dir=config.TRAIN_IMAGE_DIR,
-        annotation_dir=config.TRAIN_ANNOTATION_DIR
-    )
-    
-    data_loader = DataLoader(
-        dataset,
-        batch_size=config.BATCH_SIZE,
-        shuffle=True,
-        collate_fn=collate_fn,
-        num_workers=4 # CPU 코어 수에 맞게 조절
-    )
-
-    # 2. 모델
     model = get_detection_model(num_classes=config.NUM_CLASSES).to(device)
 
     # 3. 옵티마이저
