@@ -19,3 +19,6 @@ outputs/
 # 원본 데이터 json, png
 data/**.png
 data/**.json
+
+summary.pdf
+Daily-journal**.md
