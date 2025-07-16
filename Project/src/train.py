@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 
 # src 폴더의 다른 모듈과 설정 파일 임포트
 from . import config
-from .dataset import PillDataset
-from .model import get_detection_model
+from .dataloader import data_loader
+from models.model import get_detection_model
 
 # DataLoader는 배치 내 이미지 크기가 다를 수 있으므로 collate_fn이 필요합니다.
 def collate_fn(batch):

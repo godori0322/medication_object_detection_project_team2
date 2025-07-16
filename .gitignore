@@ -1,6 +1,24 @@
-data/**/*
-__pycache__
+# .gitignore
+
+# 파이썬 가상환경
+.venv/
+venv/
+env/
+
+# 파이썬 캐시 파일
+__pycache__/
+*.pyc
+
+# 데이터 및 결과물 (용량이 크므로)
+data/
+outputs/
+
+# OS 생성 파일
+.DS_Store
+
+# 원본 데이터 json, png
+data/**.png
+data/**.json
 
 summary.pdf
-.DS_Store
 Daily-journal**.md
