@@ -27,7 +27,7 @@ LOG_DIR.mkdir(parents=True, exist_ok=True)
 DEVICE = "cuda" # "cuda" if torch.cuda.is_available() else "cpu"
 NUM_CLASSES = 44199
 BATCH_SIZE = 4
-NUM_EPOCHS = 10
+NUM_EPOCHS = 30
 LEARNING_RATE = 0.005
 WEIGHT_DECAY = 0.0005
 
