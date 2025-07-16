@@ -17,5 +17,5 @@ outputs/
 .DS_Store
 
 # 원본 데이터 json, png
-data/*.json
-data/*.png
+data/**.png
+data/**.json
