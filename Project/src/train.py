@@ -1,10 +1,42 @@
+# src/train.py
+
 import torch
+from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
 import random
+from sklearn.model_selection import train_test_split
 from pathlib import Path
 
-from . import config
+from src.dataset import PillDataset
+from config import get_optimizer
 from .utils.visualizer import save_loss_curve
+
+def collate_fn(batch):
+    return tuple(zip(*batch))
+
+def create_dataloaders(config):
+    print("Loading data...")
+    full_dataset = PillDataset(config.train_image_dir, config.train_annotation_dir)
+    
+    print(f"Total dataset size: {len(full_dataset)}")
+    
+    # 데이터셋이 비어있는지 확인
+    if len(full_dataset) == 0:
+        raise ValueError(f"Dataset is empty! Check paths:\n"
+                        f"Image dir: {config.train_image_dir}\n"
+                        f"Annotation dir: {config.train_annotation_dir}")
+    
+    # 데이터 분할
+    indices = list(range(len(full_dataset)))
+    train_indices, val_indices = train_test_split(indices, test_size=0.1, random_state=42, shuffle=True)
+    train_dataset = Subset(full_dataset, train_indices)
+    val_dataset = Subset(full_dataset, val_indices)
+    
+    # 데이터로더 생성
+    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, collate_fn=collate_fn, num_workers=config.num_workers)
+    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=config.num_workers)
+
+    return train_loader, val_loader
 
 def train_epoch(model, train_loader, optimizer, device, epoch, num_epochs):
     model.train()
@@ -43,7 +75,7 @@ def validate_epoch(model, val_loader, device):
     
     return total_loss / len(val_loader)
 
-def train_model(model, train_loader, val_loader, training_config=None):
+def train_model(model, train_loader, val_loader, cfg):
     """
     모델 학습 함수
     
@@ -51,36 +83,21 @@ def train_model(model, train_loader, val_loader, training_config=None):
         model: 학습할 모델 객체 (예: models.faster_rcnn(num_classes=100))
         train_loader: 훈련 데이터로더
         val_loader: 검증 데이터로더
-        training_config: 학습 설정 딕셔너리
+        config: 하이퍼 파라미터 관리 config
     """
-    
-    # 기본 설정
-    if training_config is None:
-        training_config = {}
-    
-    # 설정값 가져오기 (전달된 값이 있으면 사용, 없으면 기본값)
-    num_epochs = training_config.get('num_epochs', config.NUM_EPOCHS)
-    #device_name = training_config.get('device', config.DEVICE)
-    test_image_dir = training_config.get('test_image_dir', config.TEST_IMAGE_DIR)
-    
-    # Optimizer 설정
-    optimizer_config = training_config.get('optimizer', {})
-    learning_rate = optimizer_config.get('learning_rate', config.LEARNING_RATE)
-    weight_decay = optimizer_config.get('weight_decay', config.WEIGHT_DECAY)
-    momentum = optimizer_config.get('momentum', 0.9)
-    optimizer_type = optimizer_config.get('type', 'SGD')
-    
-    #device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model_name = model.__class__.__name__.lower()
+    # 옵티마이저 생성
+    optimizer = get_optimizer(model, cfg)
+
+    model_name = model.__class__.__name__
+    optimizer_type = type(optimizer).__name__
     
     print(f"{model_name.upper()} 모델 학습 시작")
-    print(f"Device: {device}")
-    print(f"Epochs: {num_epochs}")
-    print(f"Optimizer: {optimizer_type} (lr={learning_rate}, wd={weight_decay})")
+    print(f"Device: {cfg.device}")
+    print(f"Epochs: {cfg.num_epochs}")
+    print(f"Optimizer: {optimizer_type} (lr={cfg.learning_rate}, wd={cfg.weight_decay})")
     
     # 모델을 디바이스로 이동
-    model = model.to(device)
+    model = model.to(cfg.device)
     
     # 모델 타입에 따라 파라미터 추출
     all_params = model.parameters()
@@ -90,28 +107,18 @@ def train_model(model, train_loader, val_loader, training_config=None):
     if len(params) == 0:
         raise ValueError("학습 가능한 파라미터가 없습니다. 모델 구조를 확인해주세요.")
     
-    # Optimizer 생성
-    if optimizer_type.lower() == 'sgd':
-        optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=momentum, weight_decay=weight_decay)
-    elif optimizer_type.lower() == 'adam':
-        optimizer = torch.optim.Adam(params, lr=learning_rate, weight_decay=weight_decay)
-    elif optimizer_type.lower() == 'adamw':
-        optimizer = torch.optim.AdamW(params, lr=learning_rate, weight_decay=weight_decay)
-    else:
-        raise ValueError(f"Unsupported optimizer type: {optimizer_type}")
-    
     # 체크포인트 경로
-    checkpoint_path = config.OUTPUT_DIR / f"{model_name}_best.pth"
+    checkpoint_path = cfg.output_dir / f"{model_name}_best.pth"
     
-    print(f"학습 시작: ({num_epochs} epochs)")
+    print(f"학습 시작: ({cfg.num_epochs} epochs)")
     
     train_losses = []
     val_losses = []
     best_val_loss = float('inf')
 
-    for epoch in range(num_epochs):
-        avg_train_loss = train_epoch(model, train_loader, optimizer, device, epoch, num_epochs)
-        avg_val_loss = validate_epoch(model, val_loader, device)
+    for epoch in range(cfg.num_epochs):
+        avg_train_loss = train_epoch(model, train_loader, optimizer, cfg.device, epoch, cfg.num_epochs)
+        avg_val_loss = validate_epoch(model, val_loader, cfg.device)
         
         train_losses.append(avg_train_loss)
         val_losses.append(avg_val_loss)
@@ -124,8 +131,8 @@ def train_model(model, train_loader, val_loader, training_config=None):
             print(f"모델저장. validation loss: {best_val_loss:.4f}")
 
     # 손실 곡선 저장
-    loss_curve_path = config.OUTPUT_DIR / f"{model_name}_loss_curve.png"
-    save_loss_curve(train_losses, val_losses, num_epochs, loss_curve_path)
+    loss_curve_path = cfg.output_dir / f"{model_name}_loss_curve.png"
+    save_loss_curve(train_losses, val_losses, cfg.num_epochs, loss_curve_path)
     
     print(f"{model_name.upper()} 모델 학습 완료")
     return model, checkpoint_path
