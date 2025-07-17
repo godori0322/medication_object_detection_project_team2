@@ -1,4 +1,4 @@
-# src/dataset.py
+# src/dataset
 
 import os
 import json
