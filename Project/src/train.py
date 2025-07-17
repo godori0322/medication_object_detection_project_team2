@@ -5,8 +5,6 @@ from pathlib import Path
 
 from . import config
 from .utils.visualizer import save_loss_curve
-from . import data_loader
-from models.model import get_detection_model
 
 def train_epoch(model, train_loader, optimizer, device, epoch, num_epochs):
     model.train()

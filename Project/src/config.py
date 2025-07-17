@@ -5,10 +5,10 @@ import argparse
 
 # --- 기본 경로 설정 ---
 # 이 파일(config.py)의 부모 디렉토리(src)의 부모 디렉토리(deep-learning-project)를 기준 경로로 설정
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # --- 데이터 경로 ---
-DATA_DIR = BASE_DIR / "data"
+DATA_DIR = BASE_DIR / "data/ai03-level1-project"
 TRAIN_IMAGE_DIR = DATA_DIR / "train_images"
 TEST_IMAGE_DIR = DATA_DIR / "test_images"
 TRAIN_ANNOTATION_DIR = DATA_DIR / "train_annotations" 

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from torch.utils.data import DataLoader, Subset
 from sklearn.model_selection import train_test_split
 
