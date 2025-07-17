@@ -17,7 +17,7 @@ def main():
     train_loader, val_loader = create_dataloaders(cfg)
     
     # 모델 객체 생성
-    model = models.yolo_v5(num_classes=cfg.NUM_CLASSES)
+    model = models.yolo_v5(num_classes=cfg.num_classes)
     
     # 모델 학습
     trained_model, checkpoint_path = train_model(model, train_loader, val_loader, cfg)

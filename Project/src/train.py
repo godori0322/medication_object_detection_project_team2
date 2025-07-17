@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from pathlib import Path
 
 from src.dataset import PillDataset
-from config import get_optimizer
+from src.config import get_optimizer
 from .utils.visualizer import save_loss_curve
 
 def collate_fn(batch):
@@ -16,7 +16,7 @@ def collate_fn(batch):
 
 def create_dataloaders(config):
     print("Loading data...")
-    full_dataset = PillDataset(config.train_image_dir, config.train_annotation_dir)
+    full_dataset = PillDataset(config.train_image_dir, config.annotation_dir)
     
     print(f"Total dataset size: {len(full_dataset)}")
     
@@ -24,7 +24,7 @@ def create_dataloaders(config):
     if len(full_dataset) == 0:
         raise ValueError(f"Dataset is empty! Check paths:\n"
                         f"Image dir: {config.train_image_dir}\n"
-                        f"Annotation dir: {config.train_annotation_dir}")
+                        f"Annotation dir: {config.annotation_dir}")
     
     # 데이터 분할
     indices = list(range(len(full_dataset)))
@@ -94,7 +94,7 @@ def train_model(model, train_loader, val_loader, cfg):
     print(f"{model_name.upper()} 모델 학습 시작")
     print(f"Device: {cfg.device}")
     print(f"Epochs: {cfg.num_epochs}")
-    print(f"Optimizer: {optimizer_type} (lr={cfg.learning_rate}, wd={cfg.weight_decay})")
+    print(f"Optimizer: {optimizer_type} (lr={cfg.lr}, wd={cfg.weight_decay})")
     
     # 모델을 디바이스로 이동
     model = model.to(cfg.device)

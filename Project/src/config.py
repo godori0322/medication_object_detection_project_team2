@@ -19,7 +19,7 @@ import argparse
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # --- 데이터 경로 ---
-DATA_DIR = BASE_DIR / "data"
+DATA_DIR = BASE_DIR / "data" / "ai03-level1-project"
 TRAIN_IMAGE_DIR = DATA_DIR / "train_images"
 TEST_IMAGE_DIR = DATA_DIR / "test_images"
 TRAIN_ANNOTATION_DIR = DATA_DIR / "train_annotations" 
@@ -58,7 +58,7 @@ def get_config():
     parser = argparse.ArgumentParser(description="Training configuration")
 
     parser.add_argument('--device', type=str, default='cuda', help='Device to use (cuda, mps or cpu)')
-    parser.add_argument('--epochs', type=int, default=10, help='Number of training epochs')
+    parser.add_argument('--num_epochs', type=int, default=10, help='Number of training epochs')
     parser.add_argument('--num_classes', type=int, default=44199, help='Number of classes')
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size for training')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
