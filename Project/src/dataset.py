@@ -78,6 +78,31 @@ class PillDataset(Dataset):
             if len(target['boxes']) == 0:
                 target['boxes'] = torch.zeros((0, 4), dtype=torch.float32)
         else:
+            # 이미지를 640x640으로 리사이즈
+            original_height, original_width = image.shape[:2]
+            target_size = 640
+            
+            # 이미지 리사이즈
+            image_pil = Image.fromarray(image)
+            image_pil = image_pil.resize((target_size, target_size), Image.LANCZOS)
+            image = np.array(image_pil)
+            
+            # 바운딩 박스 스케일링
+            scale_x = target_size / original_width
+            scale_y = target_size / original_height
+            
+            if len(target['boxes']) > 0:
+                scaled_boxes = []
+                for box in target['boxes']:
+                    xmin, ymin, xmax, ymax = box
+                    scaled_boxes.append([
+                        xmin * scale_x,
+                        ymin * scale_y,
+                        xmax * scale_x,
+                        ymax * scale_y
+                    ])
+                target['boxes'] = scaled_boxes
+            
             # 기본 전처리 (Numpy -> Tensor)
             image = torch.as_tensor(image, dtype=torch.float32).permute(2, 0, 1) / 255.0
             target['boxes'] = torch.as_tensor(target['boxes'], dtype=torch.float32)
