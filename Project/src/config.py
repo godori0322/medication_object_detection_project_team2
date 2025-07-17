@@ -7,10 +7,13 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # --- 데이터 경로 ---
-DATA_DIR = BASE_DIR / "data"
+DATA_DIR = BASE_DIR.parent / "data" / "ai03-level1-project"
 TRAIN_IMAGE_DIR = DATA_DIR / "train_images"
 TEST_IMAGE_DIR = DATA_DIR / "test_images"
-TRAIN_ANNOTATION_DIR = DATA_DIR / "train_annotations" 
+TRAIN_ANNOTATION_DIR = DATA_DIR / "train_annotations"
+
+CSV_TRAIN_DATA_DIR = BASE_DIR / "data_csv"
+FILLTER_CSV_TRAIN_DATA_DIR = CSV_TRAIN_DATA_DIR / "model_train_data_csv"
 
 # --- 결과물 경로 ---
 OUTPUT_DIR = BASE_DIR / "outputs"
