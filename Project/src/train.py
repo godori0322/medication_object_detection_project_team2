@@ -1,125 +1,131 @@
-# src/train.py
-
 import torch
-from torch.utils.data import DataLoader, Subset
-from sklearn.model_selection import train_test_split
 from tqdm import tqdm
-import matplotlib.pyplot as plt
+import random
+from pathlib import Path
 
-# src 폴더의 다른 모듈과 설정 파일 임포트
 from . import config
-from .dataloader import data_loader
-from models.model import get_detection_model
+from .utils.visualizer import save_loss_curve
 
-# DataLoader는 배치 내 이미지 크기가 다를 수 있으므로 collate_fn이 필요합니다.
-def collate_fn(batch):
-    return tuple(zip(*batch))
-
-def main():
-    device = torch.device(config.DEVICE)
+def train_epoch(model, train_loader, optimizer, device, epoch, num_epochs):
+    model.train()
+    train_loop = tqdm(train_loader, leave=True)
+    total_loss = 0
     
-    # 1. 전체 데이터셋 로드
-    print("Loading data...")
-    full_dataset = PillDataset(
-        image_dir=config.TRAIN_IMAGE_DIR,
-        annotation_dir=config.TRAIN_ANNOTATION_DIR
-    )
+    for images, targets in train_loop:
+        images = [img.to(device) for img in images]
+        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
-    # 2. 데이터를 학습용과 검증용으로 분할 (90% 학습, 10% 검증)
-    # 데이터셋의 인덱스를 기준으로 분할합니다.
-    indices = list(range(len(full_dataset)))
-    train_indices, val_indices = train_test_split(indices, test_size=0.1, random_state=42, shuffle=True)
-    
-    # 분할된 인덱스를 사용해 Subset 생성
-    train_dataset = Subset(full_dataset, train_indices)
-    val_dataset = Subset(full_dataset, val_indices)
-    
-    print(f"Training samples: {len(train_dataset)}, Validation samples: {len(val_dataset)}")
-
-    # 3. 데이터로더 생성
-    train_loader = DataLoader(
-        train_dataset, batch_size=config.BATCH_SIZE, shuffle=True, collate_fn=collate_fn, num_workers=4
-    )
-    val_loader = DataLoader(
-        val_dataset, batch_size=config.BATCH_SIZE, shuffle=False, collate_fn=collate_fn, num_workers=4
-    )
-
-    # 4. 모델 및 옵티마이저 설정
-    model = get_detection_model(num_classes=config.NUM_CLASSES).to(device)
-    params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.SGD(
-        params, lr=config.LEARNING_RATE, momentum=0.9, weight_decay=config.WEIGHT_DECAY
-    )
-    
-    print("🚀 Training started!")
-    
-    # 각 에포크의 손실을 저장할 리스트
-    train_losses = []
-    val_losses = []
-    best_val_loss = float('inf') # 가장 낮은 검증 손실을 기록하기 위한 변수
-
-    # 5. 학습 및 검증 루프
-    for epoch in range(config.NUM_EPOCHS):
-        # --- 학습 단계 ---
-        model.train()
-        train_loop = tqdm(train_loader, leave=True)
-        total_train_loss = 0
+        loss_dict = model(images, targets)
+        losses = sum(loss for loss in loss_dict.values())
         
-        for images, targets in train_loop:
+        optimizer.zero_grad()
+        losses.backward()
+        optimizer.step()
+
+        total_loss += losses.item()
+        train_loop.set_description(f"Epoch [{epoch+1}/{num_epochs}]")
+        train_loop.set_postfix(train_loss=losses.item())
+    
+    return total_loss / len(train_loader)
+
+def validate_epoch(model, val_loader, device):
+    model.eval()
+    total_loss = 0
+    
+    with torch.no_grad():
+        for images, targets in val_loader:
             images = [img.to(device) for img in images]
             targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-
+            
             loss_dict = model(images, targets)
             losses = sum(loss for loss in loss_dict.values())
-            
-            optimizer.zero_grad()
-            losses.backward()
-            optimizer.step()
+            total_loss += losses.item()
+    
+    return total_loss / len(val_loader)
 
-            total_train_loss += losses.item()
-            train_loop.set_description(f"Epoch [{epoch+1}/{config.NUM_EPOCHS}]")
-            train_loop.set_postfix(train_loss=losses.item())
+def train_model(model, train_loader, val_loader, training_config=None):
+    """
+    모델 학습 함수
+    
+    Args:
+        model: 학습할 모델 객체 (예: models.faster_rcnn(num_classes=100))
+        train_loader: 훈련 데이터로더
+        val_loader: 검증 데이터로더
+        training_config: 학습 설정 딕셔너리
+    """
+    
+    # 기본 설정
+    if training_config is None:
+        training_config = {}
+    
+    # 설정값 가져오기 (전달된 값이 있으면 사용, 없으면 기본값)
+    num_epochs = training_config.get('num_epochs', config.NUM_EPOCHS)
+    #device_name = training_config.get('device', config.DEVICE)
+    test_image_dir = training_config.get('test_image_dir', config.TEST_IMAGE_DIR)
+    
+    # Optimizer 설정
+    optimizer_config = training_config.get('optimizer', {})
+    learning_rate = optimizer_config.get('learning_rate', config.LEARNING_RATE)
+    weight_decay = optimizer_config.get('weight_decay', config.WEIGHT_DECAY)
+    momentum = optimizer_config.get('momentum', 0.9)
+    optimizer_type = optimizer_config.get('type', 'SGD')
+    
+    #device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model_name = model.__class__.__name__.lower()
+    
+    print(f"{model_name.upper()} 모델 학습 시작")
+    print(f"Device: {device}")
+    print(f"Epochs: {num_epochs}")
+    print(f"Optimizer: {optimizer_type} (lr={learning_rate}, wd={weight_decay})")
+    
+    # 모델을 디바이스로 이동
+    model = model.to(device)
+    
+    # 모델 타입에 따라 파라미터 추출
+    all_params = model.parameters()
+    params = [p for p in all_params if p.requires_grad]
+    
+    print(f"학습 가능한 파라미터 수: {len(params)}")
+    if len(params) == 0:
+        raise ValueError("학습 가능한 파라미터가 없습니다. 모델 구조를 확인해주세요.")
+    
+    # Optimizer 생성
+    if optimizer_type.lower() == 'sgd':
+        optimizer = torch.optim.SGD(params, lr=learning_rate, momentum=momentum, weight_decay=weight_decay)
+    elif optimizer_type.lower() == 'adam':
+        optimizer = torch.optim.Adam(params, lr=learning_rate, weight_decay=weight_decay)
+    elif optimizer_type.lower() == 'adamw':
+        optimizer = torch.optim.AdamW(params, lr=learning_rate, weight_decay=weight_decay)
+    else:
+        raise ValueError(f"Unsupported optimizer type: {optimizer_type}")
+    
+    # 체크포인트 경로
+    checkpoint_path = config.OUTPUT_DIR / f"{model_name}_best.pth"
+    
+    print(f"학습 시작: ({num_epochs} epochs)")
+    
+    train_losses = []
+    val_losses = []
+    best_val_loss = float('inf')
+
+    for epoch in range(num_epochs):
+        avg_train_loss = train_epoch(model, train_loader, optimizer, device, epoch, num_epochs)
+        avg_val_loss = validate_epoch(model, val_loader, device)
         
-        avg_train_loss = total_train_loss / len(train_loader)
         train_losses.append(avg_train_loss)
-        
-        # --- 검증 단계 ---
-        model.eval()
-        total_val_loss = 0
-        with torch.no_grad():
-            for images, targets in val_loader:
-                images = [img.to(device) for img in images]
-                targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-                
-                loss_dict = model(images, targets)
-                losses = sum(loss for loss in loss_dict.values())
-                total_val_loss += losses.item()
-        
-        avg_val_loss = total_val_loss / len(val_loader)
         val_losses.append(avg_val_loss)
-        print(f"Epoch {epoch+1} Summary: Avg Train Loss: {avg_train_loss:.4f}, Avg Val Loss: {avg_val_loss:.4f}")
+        
+        print(f"Epoch {epoch+1}: Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
 
-        # 6. 가장 좋은 성능의 모델 저장 (Best Checkpoint)
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
-            torch.save(model.state_dict(), config.MODEL_CHECKPOINT)
-            print(f"✨ Best model saved at epoch {epoch+1} with validation loss: {best_val_loss:.4f}")
+            torch.save(model.state_dict(), checkpoint_path)
+            print(f"모델저장. validation loss: {best_val_loss:.4f}")
 
-    # 7. 학습 완료 후 손실 그래프 생성 및 저장
-    plt.figure(figsize=(10, 6))
-    plt.plot(range(1, config.NUM_EPOCHS + 1), train_losses, marker='o', linestyle='-', label='Training Loss')
-    plt.plot(range(1, config.NUM_EPOCHS + 1), val_losses, marker='o', linestyle='--', label='Validation Loss')
-    plt.title("Training & Validation Loss Curve")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.grid(True)
-    plt.legend()
-    plt.xticks(range(1, config.NUM_EPOCHS + 1))
+    # 손실 곡선 저장
+    loss_curve_path = config.OUTPUT_DIR / f"{model_name}_loss_curve.png"
+    save_loss_curve(train_losses, val_losses, num_epochs, loss_curve_path)
     
-    loss_curve_path = config.OUTPUT_DIR / "training_loss_curve.png"
-    plt.savefig(loss_curve_path)
-    print(f"📈 Loss curve saved to {loss_curve_path}")
-
-
-if __name__ == '__main__':
-    main()
+    print(f"{model_name.upper()} 모델 학습 완료")
+    return model, checkpoint_path

@@ -1,13 +1,19 @@
-from ultralytics import YOLO
+import torchvision
+from torchvision.models.detection.retinanet import RetinaNetClassificationHead
 
 def yolo_v5(num_classes, pretrained=True):
     if pretrained:
-        model = YOLO('yolov5s.pt')
+        weights = 'RetinaNet_ResNet50_FPN_Weights.DEFAULT'
     else:
-        model = YOLO('yolov5s.yaml')
+        weights = None
     
-    # Modify for custom number of classes
-    if hasattr(model.model, 'model') and hasattr(model.model.model[-1], 'nc'):
-        model.model.model[-1].nc = num_classes
+    model = torchvision.models.detection.retinanet_resnet50_fpn(weights=weights)
+    
+    num_anchors = model.head.classification_head.num_anchors
+    model.head.classification_head = RetinaNetClassificationHead(
+        in_channels=256,
+        num_anchors=num_anchors,
+        num_classes=num_classes
+    )
     
     return model
