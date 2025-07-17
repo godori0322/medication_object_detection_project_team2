@@ -1,12 +1,10 @@
 import torch
 import torch.nn as nn
 
-class YOLOv5Wrapper(nn.Module):
-    """YOLO v5 wrapper for PyTorch Detection compatibility"""
-    
-    def __init__(self, yolo_model, num_classes):
+class yolo_v5(nn.Module):
+    def __init__(self, num_classes, pretrained=True):
         super().__init__()
-        self.yolo_model = yolo_model
+        self.yolo_model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=pretrained, trust_repo=True)
         self.num_classes = num_classes
         
         # Ensure all parameters are trainable
@@ -32,13 +30,3 @@ class YOLOv5Wrapper(nn.Module):
                 'loss_box_reg': torch.tensor(0.5, device=device, requires_grad=False)
             }
             return loss_dict
-
-def yolo_v5(num_classes, pretrained=True):
-    """Create YOLO v5 model using torch.hub"""
-    # Load YOLO v5 from torch.hub
-    yolo_model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=pretrained, trust_repo=True)
-    
-    # Wrap for PyTorch Detection compatibility
-    wrapped_model = YOLOv5Wrapper(yolo_model, num_classes)
-    
-    return wrapped_model
