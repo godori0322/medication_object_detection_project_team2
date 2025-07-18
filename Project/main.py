@@ -1,6 +1,7 @@
 # src/main.py
 
-from src.train import create_dataloaders, train_model
+from src.dataloader import create_dataloaders
+from src.train import train_model
 from src import models
 from src.config import get_config, get_device
 from src.utils import visualizer
@@ -14,7 +15,7 @@ def main():
     cfg = get_config()
 
     # 데이터로더 생성
-    train_loader, val_loader = create_dataloaders(cfg)
+    train_loader, val_loader, test_loader = create_dataloaders()
     
     # 모델 객체 생성
     model = models.yolo_v5(num_classes=cfg.num_classes)

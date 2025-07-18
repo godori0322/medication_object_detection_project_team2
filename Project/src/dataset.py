@@ -51,11 +51,18 @@ class PillDataset(Dataset):
                         bboxes.append([x_min, y_min, x_max, y_max])
                         labels.append(class_id)
 
+        normalized_bboxes = []
+        for bbox in bboxes:
+            x_min, y_min, x_max, y_max = bbox
+            normalized_bboxes.append([x_min / w, y_min / h, x_max / w, y_max / h])
+
         if self.transform:
-            transformed = self.transform(image=image, bboxes=bboxes, labels=labels)
+            transformed = self.transform(image=image, bboxes=normalized_bboxes, labels=labels)
             image = transformed['image']
             bboxes = transformed['bboxes']
             labels = transformed['labels']
+        else:
+            bboxes = normalized_bboxes
 
         # 변환된 bbox (pascal_voc) → YOLO 포맷으로 변환
         targets = []
@@ -65,10 +72,6 @@ class PillDataset(Dataset):
             bh = y_max - y_min
             x_c = x_min + bw / 2
             y_c = y_min + bh / 2
-            x_c /= image.shape[2]  # width
-            y_c /= image.shape[1]  # height
-            bw /= image.shape[2]
-            bh /= image.shape[1]
             targets.append([label, x_c, y_c, bw, bh])
 
         return image, torch.tensor(targets, dtype=torch.float32)
@@ -80,12 +83,14 @@ def get_train_transform():
         A.HorizontalFlip(p=0.5),
         A.RandomBrightnessContrast(p=0.2),
         A.Rotate(limit=15, p=0.3),
+        A.Normalize(mean=(0, 0, 0), std=(1, 1, 1)),
         ToTensorV2() # 이미지를 PyTorch 텐서로 변환
     ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=['labels']))
 
 
 def get_valid_transform():
     return A.Compose([
+        A.Normalize(mean=(0, 0, 0), std=(1, 1, 1)),
         ToTensorV2()
     ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=['labels']))
 

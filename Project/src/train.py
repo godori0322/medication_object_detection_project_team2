@@ -46,7 +46,7 @@ def train_epoch(model, train_loader, optimizer, device, epoch, num_epochs):
     
     for images, targets in train_loop:
         images = [img.to(device) for img in images]
-        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+        targets = [t.to(device) for t in targets]
 
         loss_dict = model(images, targets)
         losses = sum(loss for loss in loss_dict.values())
@@ -68,7 +68,7 @@ def validate_epoch(model, val_loader, device):
     with torch.no_grad():
         for images, targets in val_loader:
             images = [img.to(device) for img in images]
-            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+            targets = [t.to(device) for t in targets]
             
             loss_dict = model(images, targets)
             losses = sum(loss for loss in loss_dict.values())
