@@ -14,13 +14,15 @@ from pathlib import Path
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
+from sklearn.model_selection import train_test_split
+
 
 class PillDataset(Dataset):
-    def __init__(self, image_dir, annotation_dir, transform=None):
+    def __init__(self, image_files, image_dir, annotation_dir, transform=None):
         self.image_dir = image_dir
         self.annotation_dir = annotation_dir
         self.transform = transform
-        self.image_files = sorted([f for f in os.listdir(image_dir) if f.endswith(".png")])
+        self.image_files = image_files
     
     def __len__(self):
         return len(self.image_files)
@@ -96,31 +98,41 @@ if __name__ == '__main__':
     # config.py에서 경로를 가져와 사용
     from config import TRAIN_IMAGE_DIR, TRAIN_ANNOTATION_DIR
     
-    # 1. 데이터셋 인스턴스 생성 (증강 적용)
-    dataset = PillDataset(
-        image_dir=TRAIN_IMAGE_DIR,
-        annotation_dir=TRAIN_ANNOTATION_DIR,
-        transform=get_train_transform()
-    )
+    image_files = []
+    for f in os.listdir(TRAIN_IMAGE_DIR):
+        if f.endswith(".png"):
+            image_files.append(f)
+
+    train_images, val_images = train_test_split(image_files, test_size=0.1, random_state=42, shuffle=True)
+
+    print(len(train_images), len(val_images))
+
+    # # 1. 데이터셋 인스턴스 생성 (증강 적용)
+    # dataset = PillDataset(
+    #     image_files=[],
+    #     image_dir=TRAIN_IMAGE_DIR,
+    #     annotation_dir=TRAIN_ANNOTATION_DIR,
+    #     transform=get_train_transform()
+    # )
     
-    # 2. 데이터셋 길이 확인
-    print(f"Dataset size: {len(dataset)}")
+    # # 2. 데이터셋 길이 확인
+    # print(f"Dataset size: {len(dataset)}")
     
-    # 3. 첫 번째 샘플 데이터 확인
-    if len(dataset) > 0:
-        image, target = dataset[0]
-        print("\n--- Sample 0 ---")
-        print("Image shape:", image.shape)
-        print("Target boxes:\n", target['boxes'])
-        print("Target labels:\n", target['labels'])
-        print("Image ID:", target['image_id'])
+    # # 3. 첫 번째 샘플 데이터 확인
+    # if len(dataset) > 0:
+    #     image, target = dataset[0]
+    #     print("\n--- Sample 0 ---")
+    #     print("Image shape:", image.shape)
+    #     print("Target boxes:\n", target['boxes'])
+    #     print("Target labels:\n", target['labels'])
+    #     print("Image ID:", target['image_id'])
         
-        # 바운딩 박스가 제대로 변환되었는지 확인
-        assert target['boxes'].dtype == torch.float32, "Boxes dtype should be float32"
-        assert target['labels'].dtype == torch.int64, "Labels dtype should be int64"
-        # With ToTensorV2, the image tensor is of type torch.uint8 by default.
-        # Let's normalize it to float and check the type.
-        image = image.float() / 255.0
-        assert image.dtype == torch.float32, f"Image tensor dtype is {image.dtype}, but expected float32"
+    #     # 바운딩 박스가 제대로 변환되었는지 확인
+    #     assert target['boxes'].dtype == torch.float32, "Boxes dtype should be float32"
+    #     assert target['labels'].dtype == torch.int64, "Labels dtype should be int64"
+    #     # With ToTensorV2, the image tensor is of type torch.uint8 by default.
+    #     # Let's normalize it to float and check the type.
+    #     image = image.float() / 255.0
+    #     assert image.dtype == torch.float32, f"Image tensor dtype is {image.dtype}, but expected float32"
         
-    print("\nDataset test completed successfully!")
+    # print("\nDataset test completed successfully!")
