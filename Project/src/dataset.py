@@ -80,17 +80,17 @@ class PillDataset(Dataset):
 # --- 데이터 증강 및 변환 정의 ---
 def get_train_transform():
     return A.Compose([
-        A.HorizontalFlip(p=0.5),
-        A.RandomBrightnessContrast(p=0.2),
-        A.Rotate(limit=15, p=0.3),
-        A.Normalize(mean=(0, 0, 0), std=(1, 1, 1)),
+        # A.HorizontalFlip(p=0.5),
+        # A.RandomBrightnessContrast(p=0.2),
+        # A.Rotate(limit=15, p=0.3),
+        # A.Normalize(mean=(0, 0, 0), std=(1, 1, 1)),
         ToTensorV2() # 이미지를 PyTorch 텐서로 변환
     ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=['labels']))
 
 
 def get_valid_transform():
     return A.Compose([
-        A.Normalize(mean=(0, 0, 0), std=(1, 1, 1)),
+        # A.Normalize(mean=(0, 0, 0), std=(1, 1, 1)),
         ToTensorV2()
     ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=['labels']))
 
