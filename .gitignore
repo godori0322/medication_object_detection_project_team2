@@ -21,3 +21,6 @@ data/**/*.png
 
 summary.pdf
 Daily-journal**.md
+
+# yolo
+*.pt
