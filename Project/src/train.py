@@ -94,10 +94,8 @@ def train_model(model, train_loader, val_loader, cfg):
     # cfg 객체의 output_dir 경로를 실험별 폴더로 교체
     cfg.output_dir = Path(experiment_dir)
 
-    # 체크포인트 경로도 새 경로로 수정
-    cfg.checkpoint_dir = cfg.output_dir / "checkpoints"
-    cfg.checkpoint_dir.mkdir(parents=True, exist_ok=True)
-    checkpoint_path = cfg.checkpoint_dir / f"{model.__class__.__name__}_best.pth"
+    # best model state dict 저장하는 checkpoint_path 설정
+    checkpoint_path = cfg.output_dir / f"{model.__class__.__name__}_best.pth"
 
     # 실험 결과 저장용 디렉토리에 config의 하이퍼 파라미터 정보 csv 파일로 저장
     num_train_images = len(train_loader.dataset)
