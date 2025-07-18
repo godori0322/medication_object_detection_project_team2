@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 from tqdm import tqdm
-from . import config
+from .. import config
 
 def get_class_mapping(recreate=False):
     """
