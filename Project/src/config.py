@@ -14,6 +14,9 @@ import torch
 import torch.optim as optim
 import argparse
 
+BATCH_SIZE = 16
+NUM_WORKERS = 0
+
 # --- 기본 경로 설정 ---
 # 이 파일(config.py)의 부모 디렉토리(src)의 부모 디렉토리(Project)를 기준 경로로 설정
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -66,7 +69,7 @@ def get_config():
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size for training')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
     parser.add_argument('--optimizer', type=str, default='adam', help='Optimzer')
-    parser.add_argument('--num_workers', type=int, default=4, help='Number of workers')
+    parser.add_argument('--num_workers', type=int, default=0, help='Number of workers')
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='Weight decay')
     parser.add_argument('--confidence_threshold', type=float, default=0.5, help='Confidence threshold')
     parser.add_argument('--momentum', type=float, default=0.01, help='Momentum')
