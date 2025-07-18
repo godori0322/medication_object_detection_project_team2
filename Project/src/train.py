@@ -100,8 +100,11 @@ def train_model(model, train_loader, val_loader, cfg):
     checkpoint_path = cfg.checkpoint_dir / f"{model.__class__.__name__}_best.pth"
 
     # 실험 결과 저장용 디렉토리에 config의 하이퍼 파라미터 정보 csv 파일로 저장
+    num_train_images = len(train_loader.dataset)
+    
     logger = Logger(cfg.output_dir)
     hyperparams = {
+        "Number of Used Images": num_train_images, 
         "device": cfg.device,
         "num_epochs": cfg.num_epochs,
         "num_classes": cfg.num_classes, 
@@ -161,5 +164,8 @@ def train_model(model, train_loader, val_loader, cfg):
     loss_curve_path = cfg.output_dir / f"{model_name}_loss_curve.png"
     save_loss_curve(train_losses, val_losses, cfg.num_epochs, loss_curve_path)
     
+    # 손실 저장
+    logger.save_loss_history_csv(train_losses, val_losses)
+
     print(f"{model_name.upper()} 모델 학습 완료")
     return model, checkpoint_path
