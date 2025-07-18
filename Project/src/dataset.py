@@ -2,25 +2,22 @@ import os
 import json
 
 import cv2
-import numpy as np
-from PIL import Image
-
-
 import torch
 from torch.utils.data import Dataset
-from pathlib import Path
 
-# 데이터 증강을 위한 Albumentations 라이브러리 (선택 사항)
+# 데이터 증강
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
+from sklearn.model_selection import train_test_split
+
 
 class PillDataset(Dataset):
-    def __init__(self, image_dir, annotation_dir, transform=None):
+    def __init__(self, image_files, image_dir, annotation_dir, transform=None):
         self.image_dir = image_dir
         self.annotation_dir = annotation_dir
         self.transform = transform
-        self.image_files = sorted([f for f in os.listdir(image_dir) if f.endswith(".png")])
+        self.image_files = image_files
     
     def __len__(self):
         return len(self.image_files)
@@ -54,11 +51,18 @@ class PillDataset(Dataset):
                         bboxes.append([x_min, y_min, x_max, y_max])
                         labels.append(class_id)
 
+        normalized_bboxes = []
+        for bbox in bboxes:
+            x_min, y_min, x_max, y_max = bbox
+            normalized_bboxes.append([x_min / w, y_min / h, x_max / w, y_max / h])
+
         if self.transform:
-            transformed = self.transform(image=image, bboxes=bboxes, labels=labels)
+            transformed = self.transform(image=image, bboxes=normalized_bboxes, labels=labels)
             image = transformed['image']
             bboxes = transformed['bboxes']
             labels = transformed['labels']
+        else:
+            bboxes = normalized_bboxes
 
         # 변환된 bbox (pascal_voc) → YOLO 포맷으로 변환
         targets = []
@@ -68,59 +72,47 @@ class PillDataset(Dataset):
             bh = y_max - y_min
             x_c = x_min + bw / 2
             y_c = y_min + bh / 2
-            x_c /= image.shape[2]  # width
-            y_c /= image.shape[1]  # height
-            bw /= image.shape[2]
-            bh /= image.shape[1]
             targets.append([label, x_c, y_c, bw, bh])
 
         return image, torch.tensor(targets, dtype=torch.float32)
 
+
 # --- 데이터 증강 및 변환 정의 ---
 def get_train_transform():
     return A.Compose([
-        A.HorizontalFlip(p=0.5),
-        A.RandomBrightnessContrast(p=0.2),
-        A.Rotate(limit=15, p=0.3),
+        # A.HorizontalFlip(p=0.5),
+        # A.RandomBrightnessContrast(p=0.2),
+        # A.Rotate(limit=15, p=0.3),
+        # A.Normalize(mean=(0, 0, 0), std=(1, 1, 1)),
         ToTensorV2() # 이미지를 PyTorch 텐서로 변환
     ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=['labels']))
 
+
 def get_valid_transform():
     return A.Compose([
+        # A.Normalize(mean=(0, 0, 0), std=(1, 1, 1)),
         ToTensorV2()
     ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=['labels']))
 
 
 if __name__ == '__main__':
+    from config import get_config
+
+    config = get_config()
     # --- 테스트 코드 ---
-    # config.py에서 경로를 가져와 사용
-    from config import TRAIN_IMAGE_DIR, TRAIN_ANNOTATION_DIR
-    
+    image_files = []
+    for f in os.listdir(config.train_image_dir):
+        if f.endswith(".png"):
+            image_files.append(f)
+
+    train_images, val_images = train_test_split(image_files, test_size=0.1, random_state=42, shuffle=True)
+
+    print(len(train_images), len(val_images))
+
     # 1. 데이터셋 인스턴스 생성 (증강 적용)
     dataset = PillDataset(
-        image_dir=TRAIN_IMAGE_DIR,
-        annotation_dir=TRAIN_ANNOTATION_DIR,
+        image_files=val_images,
+        image_dir=config.train_image_dir,
+        annotation_dir=config.annotation_dir,
         transform=get_train_transform()
     )
-    
-    # 2. 데이터셋 길이 확인
-    print(f"Dataset size: {len(dataset)}")
-    
-    # 3. 첫 번째 샘플 데이터 확인
-    if len(dataset) > 0:
-        image, target = dataset[0]
-        print("\n--- Sample 0 ---")
-        print("Image shape:", image.shape)
-        print("Target boxes:\n", target['boxes'])
-        print("Target labels:\n", target['labels'])
-        print("Image ID:", target['image_id'])
-        
-        # 바운딩 박스가 제대로 변환되었는지 확인
-        assert target['boxes'].dtype == torch.float32, "Boxes dtype should be float32"
-        assert target['labels'].dtype == torch.int64, "Labels dtype should be int64"
-        # With ToTensorV2, the image tensor is of type torch.uint8 by default.
-        # Let's normalize it to float and check the type.
-        image = image.float() / 255.0
-        assert image.dtype == torch.float32, f"Image tensor dtype is {image.dtype}, but expected float32"
-        
-    print("\nDataset test completed successfully!")
