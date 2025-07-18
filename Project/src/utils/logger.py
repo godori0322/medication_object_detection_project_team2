@@ -33,3 +33,20 @@ class Logger:
             # 값 (value)
             writer.writerow(params.values())
         print(f"Hyperparameters saved to: {save_path}")
+
+    def save_loss_history_csv(self, train_losses: list, val_losses: list, filename="loss_history.csv"):
+        """
+        에폭별 train/val loss를 CSV로 저장
+
+        Args:
+            train_losses (list): 학습 손실 값 리스트
+            val_losses (list): 검증 손실 값 리스트
+            filename (str): 저장 파일명
+        """
+        save_path = self.save_dir / filename
+        with open(save_path, mode='w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['epoch', 'train_loss', 'val_loss'])  # 헤더
+            for epoch, (tr_loss, val_loss) in enumerate(zip(train_losses, val_losses), 1):
+                writer.writerow([epoch, tr_loss, val_loss])
+        print(f"Loss history saved to: {save_path}")
