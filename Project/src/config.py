@@ -65,7 +65,7 @@ def get_config():
     parser.add_argument('--optimizer', type=str, default='adam', help='Optimzer')
     parser.add_argument('--num_workers', type=int, default=4, help='Number of workers')
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='Weight decay')
-    parser.add_argument('--confidence', type=float, default=0.5, help='Confidence threshold')
+    parser.add_argument('--confidence_threshold', type=float, default=0.5, help='Confidence threshold')
     parser.add_argument('--momentum', type=float, default=0.01, help='Momentum')
 
     args = parser.parse_args()

@@ -1,3 +1,5 @@
+# src/utils/visualizer.py
+
 import torch
 import random
 import numpy as np
@@ -29,7 +31,7 @@ def visualize_prediction(image_path, model, class_mapping, config):
     
     # Convert to tensor for model
     image_tensor = torch.as_tensor(np.array(image_pil), dtype=torch.float32).permute(2, 0, 1) / 255.0
-    image_tensor = image_tensor.to(config.DEVICE)
+    image_tensor = image_tensor.to(config.device)
 
     # Model prediction
     model.eval()
@@ -46,7 +48,7 @@ def visualize_prediction(image_path, model, class_mapping, config):
 
     # Draw predictions
     for box, label, score in zip(prediction[0]['boxes'], prediction[0]['labels'], prediction[0]['scores']):
-        if score > config.CONFIDENCE_THRESHOLD:
+        if score > config.confidence_threshold:
             x_min, y_min, x_max, y_max = map(int, box)
             
             class_id_str = str(label.item())
@@ -67,7 +69,7 @@ def visualize_predictions(model, class_mapping, config):
     """시각화 실행 함수"""
     print("🎨 테스트 이미지에 대한 모델 예측을 시각화합니다.")
     
-    test_images = list(Path(config.TEST_IMAGE_DIR).glob("*.png"))
+    test_images = list(Path(config.test_img_dir).glob("*.png"))
     if test_images:
         random_image_path = random.choice(test_images)
         visualize_prediction(random_image_path, model, class_mapping, config)

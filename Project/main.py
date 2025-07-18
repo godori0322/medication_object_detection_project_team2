@@ -31,4 +31,4 @@ if __name__ == "__main__":
     main()
 
 ## 실행 예시(CLI에서)
-## python src/main.py --epochs 30 --lr 0.0005 --batch_size 64
+## python src/main.py --num_epochs 30 --lr 0.0005 --batch_size 64

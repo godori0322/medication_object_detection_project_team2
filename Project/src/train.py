@@ -9,6 +9,7 @@ from pathlib import Path
 
 from src.dataset import PillDataset
 from src.config import get_optimizer
+from .utils.logger import create_experiment_dir, Logger
 from .utils.visualizer import save_loss_curve
 
 def collate_fn(batch):
@@ -85,6 +86,35 @@ def train_model(model, train_loader, val_loader, cfg):
         val_loader: 검증 데이터로더
         config: 하이퍼 파라미터 관리 config
     """
+
+    # 실험 결과 저장용 디렉토리 생성 (output_dir 기반)
+    experiment_dir = create_experiment_dir(cfg.output_dir, model.__class__.__name__)
+    print(f"Experiment directory created at: {experiment_dir}")
+    
+    # cfg 객체의 output_dir 경로를 실험별 폴더로 교체
+    cfg.output_dir = Path(experiment_dir)
+
+    # 체크포인트 경로도 새 경로로 수정
+    cfg.checkpoint_dir = cfg.output_dir / "checkpoints"
+    cfg.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    checkpoint_path = cfg.checkpoint_dir / f"{model.__class__.__name__}_best.pth"
+
+    # 실험 결과 저장용 디렉토리에 config의 하이퍼 파라미터 정보 csv 파일로 저장
+    logger = Logger(cfg.output_dir)
+    hyperparams = {
+        "device": cfg.device,
+        "num_epochs": cfg.num_epochs,
+        "num_classes": cfg.num_classes, 
+        "batch_size": cfg.batch_size,
+        "lr": cfg.lr,
+        "optimizer": cfg.optimizer,
+        "num_workers": cfg.num_workers, 
+        "weight_decay": cfg.weight_decay,
+        "confidence_threshold": cfg.confidence_threshold, 
+        "momentum": cfg.momentum
+    }
+    logger.save_hyperparameters_csv(hyperparams)
+
     # 옵티마이저 생성
     optimizer = get_optimizer(model, cfg)
 
@@ -106,9 +136,6 @@ def train_model(model, train_loader, val_loader, cfg):
     print(f"학습 가능한 파라미터 수: {len(params)}")
     if len(params) == 0:
         raise ValueError("학습 가능한 파라미터가 없습니다. 모델 구조를 확인해주세요.")
-    
-    # 체크포인트 경로
-    checkpoint_path = cfg.output_dir / f"{model_name}_best.pth"
     
     print(f"학습 시작: ({cfg.num_epochs} epochs)")
     
