@@ -2,15 +2,10 @@ import os
 import json
 
 import cv2
-import numpy as np
-from PIL import Image
-
-
 import torch
 from torch.utils.data import Dataset
-from pathlib import Path
 
-# 데이터 증강을 위한 Albumentations 라이브러리 (선택 사항)
+# 데이터 증강
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
@@ -78,6 +73,7 @@ class PillDataset(Dataset):
 
         return image, torch.tensor(targets, dtype=torch.float32)
 
+
 # --- 데이터 증강 및 변환 정의 ---
 def get_train_transform():
     return A.Compose([
@@ -87,6 +83,7 @@ def get_train_transform():
         ToTensorV2() # 이미지를 PyTorch 텐서로 변환
     ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=['labels']))
 
+
 def get_valid_transform():
     return A.Compose([
         ToTensorV2()
@@ -94,12 +91,12 @@ def get_valid_transform():
 
 
 if __name__ == '__main__':
+    from config import get_config
+
+    config = get_config()
     # --- 테스트 코드 ---
-    # config.py에서 경로를 가져와 사용
-    from config import TRAIN_IMAGE_DIR, TRAIN_ANNOTATION_DIR
-    
     image_files = []
-    for f in os.listdir(TRAIN_IMAGE_DIR):
+    for f in os.listdir(config.train_image_dir):
         if f.endswith(".png"):
             image_files.append(f)
 
@@ -107,32 +104,10 @@ if __name__ == '__main__':
 
     print(len(train_images), len(val_images))
 
-    # # 1. 데이터셋 인스턴스 생성 (증강 적용)
-    # dataset = PillDataset(
-    #     image_files=[],
-    #     image_dir=TRAIN_IMAGE_DIR,
-    #     annotation_dir=TRAIN_ANNOTATION_DIR,
-    #     transform=get_train_transform()
-    # )
-    
-    # # 2. 데이터셋 길이 확인
-    # print(f"Dataset size: {len(dataset)}")
-    
-    # # 3. 첫 번째 샘플 데이터 확인
-    # if len(dataset) > 0:
-    #     image, target = dataset[0]
-    #     print("\n--- Sample 0 ---")
-    #     print("Image shape:", image.shape)
-    #     print("Target boxes:\n", target['boxes'])
-    #     print("Target labels:\n", target['labels'])
-    #     print("Image ID:", target['image_id'])
-        
-    #     # 바운딩 박스가 제대로 변환되었는지 확인
-    #     assert target['boxes'].dtype == torch.float32, "Boxes dtype should be float32"
-    #     assert target['labels'].dtype == torch.int64, "Labels dtype should be int64"
-    #     # With ToTensorV2, the image tensor is of type torch.uint8 by default.
-    #     # Let's normalize it to float and check the type.
-    #     image = image.float() / 255.0
-    #     assert image.dtype == torch.float32, f"Image tensor dtype is {image.dtype}, but expected float32"
-        
-    # print("\nDataset test completed successfully!")
+    # 1. 데이터셋 인스턴스 생성 (증강 적용)
+    dataset = PillDataset(
+        image_files=val_images,
+        image_dir=config.train_image_dir,
+        annotation_dir=config.annotation_dir,
+        transform=get_train_transform()
+    )

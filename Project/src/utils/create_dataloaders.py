@@ -1,5 +1,5 @@
 import os
-from src.config import TRAIN_IMAGE_DIR, TRAIN_ANNOTATION_DIR
+from config import get_config
 
 from src.dataset import PillDataset, get_train_transform
 from src.dataloader import getPillDataloader
@@ -7,10 +7,12 @@ from src.dataloader import getPillDataloader
 from sklearn.model_selection import train_test_split
 
 
+config = get_config()
+
 def create_dataloaders():
     print("Loading data...")
     image_files = []
-    for f in os.listdir(TRAIN_IMAGE_DIR):
+    for f in os.listdir(config.train_image_dir):
         if f.endswith(".png"):
             image_files.append(f)
 
@@ -18,14 +20,14 @@ def create_dataloaders():
     
     train_dataset = PillDataset(
         image_files=train_images,
-        image_dir=TRAIN_IMAGE_DIR,
-        annotation_dir=TRAIN_ANNOTATION_DIR,
+        image_dir=config.train_image_dir,
+        annotation_dir=config.annotation_dir,
         transform=get_train_transform()
     )
     val_dataset = PillDataset(
         image_files=val_images,
-        image_dir=TRAIN_IMAGE_DIR,
-        annotation_dir=TRAIN_ANNOTATION_DIR,
+        image_dir=config.train_image_dir,
+        annotation_dir=config.annotation_dir,
     )
 
     train_loader = getPillDataloader(train_dataset, True)
