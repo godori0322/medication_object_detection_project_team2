@@ -24,6 +24,10 @@ TRAIN_IMAGE_DIR = DATA_DIR / "train_images"
 TEST_IMAGE_DIR = DATA_DIR / "test_images"
 TRAIN_ANNOTATION_DIR = DATA_DIR / "train_annotations" 
 
+# 전처리된 데이터와 매핑정보들
+MAPPINGS_JSON_DIR = BASE_DIR / "Project" / "data_csv" / "mappings.json"
+FILTERED_ANNOTATION_CSV_PATH = BASE_DIR / "Project" / "data_csv" / "filtered_df.csv"
+
 # --- 결과물 경로 ---
 OUTPUT_DIR = BASE_DIR / "Project" / "outputs"
 CHECKPOINT_DIR = OUTPUT_DIR / "checkpoints"
@@ -73,6 +77,10 @@ def get_config():
     args.train_image_dir = TRAIN_IMAGE_DIR
     args.test_image_dir = TEST_IMAGE_DIR
     args.annotation_dir = TRAIN_ANNOTATION_DIR
+    
+    args.filtered_annotation_csv_path = FILTERED_ANNOTATION_CSV_PATH
+    args.mappings_json_path = MAPPINGS_JSON_DIR
+
     args.output_dir = OUTPUT_DIR
     args.checkpoint_dir = CHECKPOINT_DIR
     args.model_checkpoint = MODEL_CHECKPOINT

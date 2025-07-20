@@ -7,112 +7,109 @@ import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 from pathlib import Path
+from src.utils.boxes import coco_to_voc
+from src.utils.tensor_utils import safe_tensor
 
 # 데이터 증강을 위한 Albumentations 라이브러리 (선택 사항)
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
 
+#datasets/pill_dataset.py
+# YOLO / FastRCNN 등의 구조에 적합한 클래스형태
 class PillDataset(Dataset):
-    """
-    개별 JSON 파일로 구성된 경구약제 데이터셋을 위한 커스텀 클래스
-    """
-    def __init__(self, image_dir, annotation_dir, transforms=None):
-        """
-        Args:
-            image_dir (string): 이미지 파일들이 있는 디렉토리 경로
-            annotation_dir (string): 개별 JSON 어노테이션 파일들이 있는 상위 디렉토리 경로
-            transforms (callable, optional): 샘플에 적용될 전처리(transform)
-        """
-        self.image_dir = Path(image_dir)
-        self.annotation_dir = Path(annotation_dir)
+    def __init__(self, img_dir, labels_df, mappings, transforms=None):
+        self.img_dir = img_dir
         self.transforms = transforms
-        
-        # annotation_dir 및 모든 하위 디렉토리에서 .json 파일을 찾습니다.
-        self.json_paths = sorted(list(self.annotation_dir.glob('**/*.json')))
-        
+        self.labels_df = labels_df
+        self.image_id_map = mappings.get('image_id_map', {})
+        self.img_ids = self.labels_df['image_id'].unique()
+        self.records_dict = labels_df.groupby('image_id')
+
     def __len__(self):
-        return len(self.json_paths)
+        return len(self.img_ids)
 
     def __getitem__(self, idx):
-        # 해당 인덱스의 JSON 파일 경로를 가져옵니다.
-        json_path = self.json_paths[idx]
+        image_id = self.img_ids[idx]
+        file_name = self.image_id_map.get(image_id)
         
-        # JSON 파일에서 어노테이션 정보 로드
-        with open(json_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+        if file_name is None:
+            raise ValueError(f" {self.img_dir} image_id '{image_id}'에 대한 파일명이 mappings에 없습니다.")
 
-        # 이미지 파일명은 JSON 파일명에서 확장자만 변경하여 구성
-        image_filename = json_path.stem + '.png'
-        image_path = self.image_dir / image_filename
-        
-        # 이미지를 Numpy 배열로 불러오기 (transforms 적용을 위해)
-        image = np.array(Image.open(image_path).convert("RGB"))
-        
-        boxes = []
-        labels = []
-        
-        # JSON 파일 내의 'annotations' 리스트에서 정보 추출
-        for ann in data.get('annotations', []):
-            bbox = ann.get('bbox')
-            category_id = ann.get('category_id')
-            
-            if bbox and category_id is not None:
-                # COCO 형식 [x, y, w, h] -> [xmin, ymin, xmax, ymax] 형식으로 변환
-                xmin, ymin = bbox[0], bbox[1]
-                xmax, ymax = xmin + bbox[2], ymin + bbox[3]
-                boxes.append([xmin, ymin, xmax, ymax])
-                labels.append(category_id)
+        img_path = os.path.join(self.img_dir, file_name)
+        image_np = np.array(Image.open(img_path).convert('RGB'))
 
-        target = {"boxes": boxes, "labels": labels}
+        # 해당 이미지의 모든 객체 라벨
+        records = self.records_dict.get_group(image_id)
+        boxes_coco = records[['bbox_x', 'bbox_y', 'bbox_w', 'bbox_h']].values
+        labels = records['category_id'].values
 
-        # --- 데이터 증강(Data Augmentation) 적용 부분 ---
-        if self.transforms:
-            # Albumentations 라이브러리를 사용할 경우
-            transformed = self.transforms(image=image, bboxes=target['boxes'], labels=target['labels'])
-            image = transformed['image']
-            target['boxes'] = torch.tensor(transformed['bboxes'], dtype=torch.float32)
-            target['labels'] = torch.tensor(transformed['labels'], dtype=torch.int64)
-            
-            # 증강 후 바운딩 박스가 사라졌을 경우 처리
-            if len(target['boxes']) == 0:
-                target['boxes'] = torch.zeros((0, 4), dtype=torch.float32)
+        # Albumentations transform이 있으면 bbox_voc 변환 및 동기 처리
+        if self.transforms is not None:
+            boxes_voc = coco_to_voc(boxes_coco)
+            transformed = self.transforms(
+                image=image_np,
+                bboxes=boxes_voc.tolist(),
+                category_ids=labels.tolist()
+            )
+            image_np = transformed['image']
+            boxes = transformed['bboxes']
+            labels = transformed['category_ids']
         else:
-            # 이미지를 640x640으로 리사이즈
-            original_height, original_width = image.shape[:2]
-            target_size = 640
-            
-            # 이미지 리사이즈
-            image_pil = Image.fromarray(image)
-            image_pil = image_pil.resize((target_size, target_size), Image.LANCZOS)
-            image = np.array(image_pil)
-            
-            # 바운딩 박스 스케일링
-            scale_x = target_size / original_width
-            scale_y = target_size / original_height
-            
-            if len(target['boxes']) > 0:
-                scaled_boxes = []
-                for box in target['boxes']:
-                    xmin, ymin, xmax, ymax = box
-                    scaled_boxes.append([
-                        xmin * scale_x,
-                        ymin * scale_y,
-                        xmax * scale_x,
-                        ymax * scale_y
-                    ])
-                target['boxes'] = scaled_boxes
-            
-            # 기본 전처리 (Numpy -> Tensor)
-            image = torch.as_tensor(image, dtype=torch.float32).permute(2, 0, 1) / 255.0
-            target['boxes'] = torch.as_tensor(target['boxes'], dtype=torch.float32)
-            target['labels'] = torch.as_tensor(target['labels'], dtype=torch.int64)
+            boxes = boxes_coco # 원본 bbox 형식 유지
 
-        # 바운딩 박스가 없는 이미지에 대한 예외 처리
-        if len(target['boxes']) == 0:
-            target['boxes'] = torch.zeros((0, 4), dtype=torch.float32)
-            
-        # image_id 등 추가 정보 (필요시)
-        target["image_id"] = torch.tensor([idx])
-        
-        return image, target
+        # 최종 image tensor
+        image_tensor = (
+            image_np if isinstance(image_np, torch.Tensor)
+            else torch.as_tensor(image_np).permute(2, 0, 1).float() / 255.
+        )
+
+        # tensor 안전하게 변환
+        boxes = safe_tensor(boxes, (0, 4), torch.float32)
+        labels = safe_tensor(labels, (0,), torch.int64)
+
+        target = {
+            "boxes" : boxes,
+            "labels" : labels,
+            "image_id" : torch.tensor([image_id]),
+        }
+
+        return image_tensor, target
+
+
+
+class PillTestDataset(Dataset):
+    def __init__(self, img_dir, transforms=None):
+        """
+        테스트 이미지셋 전용 Dataset 클래스 (라벨 없음)
+
+        Args:
+            img_dir (str): 이미지 경로 디렉토리
+            transforms: Albumentations 이미지 변환
+        """
+        self.img_dir = img_dir
+        self.transforms = transforms
+        self.file_names = sorted(os.listdir(img_dir))  # 파일명 기준으로 처리
+
+    def __len__(self):
+        return len(self.file_names)
+
+    def __getitem__(self, idx):
+        file_name = self.file_names[idx]
+        img_path = os.path.join(self.img_dir, file_name)
+
+        image_np = np.array(Image.open(img_path).convert('RGB'))
+
+        if self.transforms is not None:
+            image_np = self.transforms(image=image_np)['image']
+
+        image_tensor = (
+            image_np if isinstance(image_np, torch.Tensor)
+            else torch.as_tensor(image_np).permute(2, 0, 1).float() / 255.
+        )
+
+        target = {
+            "image_name": file_name
+        }
+
+        return image_tensor, target
