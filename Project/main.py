@@ -1,10 +1,10 @@
 # src/main.py
-
-from src.train import create_dataloaders, train_model
+from src.train import train_model
 from src import models
 from src.config import get_config, get_device
 from src.utils.evaluater import evaluate_map_50
 from src.utils.logger import save_metric_result
+from src.dataloader import create_dataloaders
 
 def main():
     # 현재 사용 중인 device 확인
@@ -15,7 +15,7 @@ def main():
     cfg = get_config()
 
     # 데이터로더 생성
-    train_loader, val_loader = create_dataloaders(cfg)
+    train_loader, val_loader, test_loader = create_dataloaders(cfg)
     
     # 모델 객체 생성
     model = models.yolo_v5(num_classes=cfg.num_classes)

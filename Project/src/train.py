@@ -12,33 +12,6 @@ from src.config import get_optimizer
 from .utils.logger import create_experiment_dir, Logger
 from .utils.visualizer import save_loss_curve
 
-def collate_fn(batch):
-    return tuple(zip(*batch))
-
-def create_dataloaders(config):
-    print("Loading data...")
-    full_dataset = PillDataset(config.train_image_dir, config.annotation_dir)
-    
-    print(f"Total dataset size: {len(full_dataset)}")
-    
-    # 데이터셋이 비어있는지 확인
-    if len(full_dataset) == 0:
-        raise ValueError(f"Dataset is empty! Check paths:\n"
-                        f"Image dir: {config.train_image_dir}\n"
-                        f"Annotation dir: {config.annotation_dir}")
-    
-    # 데이터 분할
-    indices = list(range(len(full_dataset)))
-    train_indices, val_indices = train_test_split(indices, test_size=0.1, random_state=42, shuffle=True)
-    train_dataset = Subset(full_dataset, train_indices)
-    val_dataset = Subset(full_dataset, val_indices)
-    
-    # 데이터로더 생성
-    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, collate_fn=collate_fn, num_workers=config.num_workers)
-    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=config.num_workers)
-
-    return train_loader, val_loader
-
 def train_epoch(model, train_loader, optimizer, device, epoch, num_epochs):
     model.train()
     train_loop = tqdm(train_loader, leave=True)

@@ -32,10 +32,6 @@ class PillDataset(Dataset):
     def __getitem__(self, idx):
         image_id = self.img_ids[idx]
         file_name = self.image_id_map.get(image_id)
-        
-        if file_name is None:
-            raise ValueError(f" {self.img_dir} image_id '{image_id}'에 대한 파일명이 mappings에 없습니다.")
-
         img_path = os.path.join(self.img_dir, file_name)
         image_np = np.array(Image.open(img_path).convert('RGB'))
 
@@ -52,17 +48,12 @@ class PillDataset(Dataset):
                 bboxes=boxes_voc.tolist(),
                 category_ids=labels.tolist()
             )
-            image_np = transformed['image']
+            image_tensor = transformed['image']
             boxes = transformed['bboxes']
             labels = transformed['category_ids']
         else:
+            image_tensor = torch.as_tensor(image_np).permute(2, 0, 1).float() / 255.
             boxes = boxes_coco # 원본 bbox 형식 유지
-
-        # 최종 image tensor
-        image_tensor = (
-            image_np if isinstance(image_np, torch.Tensor)
-            else torch.as_tensor(image_np).permute(2, 0, 1).float() / 255.
-        )
 
         # tensor 안전하게 변환
         boxes = safe_tensor(boxes, (0, 4), torch.float32)
@@ -101,12 +92,9 @@ class PillTestDataset(Dataset):
         image_np = np.array(Image.open(img_path).convert('RGB'))
 
         if self.transforms is not None:
-            image_np = self.transforms(image=image_np)['image']
-
-        image_tensor = (
-            image_np if isinstance(image_np, torch.Tensor)
-            else torch.as_tensor(image_np).permute(2, 0, 1).float() / 255.
-        )
+            image_tensor = self.transforms(image=image_np)['image']
+        else:
+            image_tensor = torch.as_tensor(image_np).permute(2, 0, 1).float() / 255.
 
         target = {
             "image_name": file_name
