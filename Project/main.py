@@ -1,12 +1,10 @@
 # src/main.py
-
-from src.dataloader import create_dataloaders
-from src.train import train_model
 from src import models
-from src.test import run_test
+from src.train import train_model
 from src.config import get_config, get_device
 from src.utils.evaluater import evaluate_map_50
 from src.utils.logger import save_metric_result
+from src.dataloader import create_dataloaders
 
 def main():
     # 현재 사용 중인 device 확인
@@ -19,7 +17,7 @@ def main():
     # filtered_df, mappings = prepare_clean_annotations(cfg)
 
     # 데이터로더 생성
-    train_loader, val_loader, test_loader = create_dataloaders()
+    train_loader, val_loader, test_loader, mappings = create_dataloaders(cfg)
     
     # 모델 객체 생성
     if cfg.model_type.lower() == 'yolo':
