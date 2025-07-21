@@ -1,6 +1,3 @@
-import pandas as pd
-import json
-from pathlib import Path
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from src.dataset import PillDataset, PillTestDataset
