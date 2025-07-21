@@ -1,5 +1,11 @@
+# src/dataset
 import os
-import json
+import torch
+import numpy as np
+from PIL import Image
+from torch.utils.data import Dataset
+from src.utils.boxes import coco_to_voc
+from src.utils.tensor_utils import safe_tensor
 
 import cv2
 import torch
@@ -7,112 +13,93 @@ from torch.utils.data import Dataset
 
 # 데이터 증강
 import albumentations as A
-from albumentations.pytorch import ToTensorV2
 
 from sklearn.model_selection import train_test_split
 
 
+#datasets/pill_dataset.py
+# YOLO / FastRCNN 등의 구조에 적합한 클래스형태
 class PillDataset(Dataset):
-    def __init__(self, image_files, image_dir, annotation_dir, transform=None):
-        self.image_dir = image_dir
-        self.annotation_dir = annotation_dir
-        self.transform = transform
-        self.image_files = image_files
-    
+    def __init__(self, img_dir, labels_df, mappings, transforms=None):
+        self.img_dir = img_dir
+        self.transforms = transforms
+        self.labels_df = labels_df
+        self.image_id_map = mappings.get('image_id_map', {})
+        self.img_ids = self.labels_df['image_id'].unique()
+        self.records_dict = labels_df.groupby('image_id')
+
     def __len__(self):
-        return len(self.image_files)
-    
+        return len(self.img_ids)
+
     def __getitem__(self, idx):
-        img_name = self.image_files[idx]
-        img_id = os.path.splitext(img_name)[0]
-        img_path = os.path.join(self.image_dir, img_name)
+        image_id = self.img_ids[idx]
+        file_name = self.image_id_map.get(image_id)
+        img_path = os.path.join(self.img_dir, file_name)
+        image_np = np.array(Image.open(img_path).convert('RGB'))
 
-        # OpenCV로 이미지 로딩
-        image = cv2.imread(img_path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        h, w, _ = image.shape
+        # 해당 이미지의 모든 객체 라벨
+        records = self.records_dict.get_group(image_id)
+        boxes_coco = records[['bbox_x', 'bbox_y', 'bbox_w', 'bbox_h']].values
+        labels = records['category_id'].values
 
-        ann_dir = os.path.join(self.annotation_dir, f"{img_id.split('_')[0]}_json")
-        bboxes = []
-        labels = []
-
-        for dirname in os.listdir(ann_dir):
-            for file in os.listdir(os.path.join(ann_dir, dirname)):
-                if file.endswith(".json") and img_id in file:
-                    with open(os.path.join(ann_dir, dirname, file), "r") as f:
-                        ann = json.load(f)
-                        label = ann["categories"][0]["name"]
-                        class_id = ann["annotations"][0]["category_id"]
-                        if class_id == -1:
-                            continue
-                        x, y, bw, bh = ann["annotations"][0]["bbox"]
-                        x_min, y_min = x, y
-                        x_max, y_max = x + bw, y + bh
-                        bboxes.append([x_min, y_min, x_max, y_max])
-                        labels.append(class_id)
-
-        normalized_bboxes = []
-        for bbox in bboxes:
-            x_min, y_min, x_max, y_max = bbox
-            normalized_bboxes.append([x_min / w, y_min / h, x_max / w, y_max / h])
-
-        if self.transform:
-            transformed = self.transform(image=image, bboxes=normalized_bboxes, labels=labels)
-            image = transformed['image']
-            bboxes = transformed['bboxes']
-            labels = transformed['labels']
+        # Albumentations transform이 있으면 bbox_voc 변환 및 동기 처리
+        if self.transforms is not None:
+            boxes_voc = coco_to_voc(boxes_coco)
+            transformed = self.transforms(
+                image=image_np,
+                bboxes=boxes_voc.tolist(),
+                category_ids=labels.tolist()
+            )
+            image_tensor = transformed['image']
+            boxes = transformed['bboxes']
+            labels = transformed['category_ids']
         else:
-            bboxes = normalized_bboxes
+            image_tensor = torch.as_tensor(image_np).permute(2, 0, 1).float() / 255.
+            boxes = boxes_coco # 원본 bbox 형식 유지
 
-        # 변환된 bbox (pascal_voc) → YOLO 포맷으로 변환
-        targets = []
-        for bbox, label in zip(bboxes, labels):
-            x_min, y_min, x_max, y_max = bbox
-            bw = x_max - x_min
-            bh = y_max - y_min
-            x_c = x_min + bw / 2
-            y_c = y_min + bh / 2
-            targets.append([label, x_c, y_c, bw, bh])
+        # tensor 안전하게 변환
+        boxes = safe_tensor(boxes, (0, 4), torch.float32)
+        labels = safe_tensor(labels, (0,), torch.int64)
 
-        return image, torch.tensor(targets, dtype=torch.float32)
+        target = {
+            "boxes" : boxes,
+            "labels" : labels,
+            "image_id" : torch.tensor([image_id]),
+        }
 
-
-# --- 데이터 증강 및 변환 정의 ---
-def get_train_transform():
-    return A.Compose([
-        # A.HorizontalFlip(p=0.5),
-        # A.RandomBrightnessContrast(p=0.2),
-        # A.Rotate(limit=15, p=0.3),
-        # A.Normalize(mean=(0, 0, 0), std=(1, 1, 1)),
-        ToTensorV2() # 이미지를 PyTorch 텐서로 변환
-    ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=['labels']))
+        return image_tensor, target
 
 
-def get_valid_transform():
-    return A.Compose([
-        # A.Normalize(mean=(0, 0, 0), std=(1, 1, 1)),
-        ToTensorV2()
-    ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=['labels']))
 
+class PillTestDataset(Dataset):
+    def __init__(self, img_dir, transforms=None):
+        """
+        테스트 이미지셋 전용 Dataset 클래스 (라벨 없음)
 
-if __name__ == '__main__':
-    from config import get_config
+        Args:
+            img_dir (str): 이미지 경로 디렉토리
+            transforms: Albumentations 이미지 변환
+        """
+        self.img_dir = img_dir
+        self.transforms = transforms
+        self.file_names = sorted(os.listdir(img_dir))  # 파일명 기준으로 처리
 
-    config = get_config()
-    # --- 테스트 코드 ---
-    image_files = []
-    for f in os.listdir(config.train_image_dir):
-        if f.endswith(".png"):
-            image_files.append(f)
+    def __len__(self):
+        return len(self.file_names)
 
-    train_images, val_images = train_test_split(image_files, test_size=0.1, random_state=42, shuffle=True)
+    def __getitem__(self, idx):
+        file_name = self.file_names[idx]
+        img_path = os.path.join(self.img_dir, file_name)
 
-    print(len(train_images), len(val_images))
+        image_np = np.array(Image.open(img_path).convert('RGB'))
 
-    # 1. 데이터셋 인스턴스 생성 (증강 적용)
-    dataset = PillDataset(
-        image_files=val_images,
-        image_dir=config.train_image_dir,
-        annotation_dir=config.annotation_dir,
-        transform=get_train_transform()
-    )
+        if self.transforms is not None:
+            image_tensor = self.transforms(image=image_np)['image']
+        else:
+            image_tensor = torch.as_tensor(image_np).permute(2, 0, 1).float() / 255.
+
+        target = {
+            "image_name": file_name
+        }
+
+        return image_tensor, target

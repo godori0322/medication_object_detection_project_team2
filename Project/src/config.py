@@ -77,7 +77,8 @@ def get_config():
     parser.add_argument('--momentum', type=float, default=0.01, help='Momentum')
 
     args = parser.parse_args()
-
+    
+    args.base_dir = BASE_DIR
     args.train_image_dir = TRAIN_IMAGE_DIR
     args.test_image_dir = TEST_IMAGE_DIR
     args.annotation_dir = TRAIN_ANNOTATION_DIR
