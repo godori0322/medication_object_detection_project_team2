@@ -1,10 +1,10 @@
 {
     "images": [
         {
-            "file_name": "K-003351-016262-018357_0_2_0_2_75_000_200.png",
+            "file_name": "K-003351-016688-018357_0_2_0_2_90_000_200.png",
             "width": 976,
             "height": 1280,
-            "imgfile": "K-003351-016262-018357_0_2_0_2_75_000_200.png",
+            "imgfile": "K-003351-016688-018357_0_2_0_2_90_000_200.png",
             "drug_N": "K-018357",
             "drug_S": "정상알약",
             "back_color": "연회색 배경",
@@ -50,25 +50,25 @@
             "mark_code_front": "",
             "mark_code_back": "",
             "change_date": "20210728",
-            "id": 239
+            "id": 1455
         }
     ],
     "type": "instances",
     "annotations": [
         {
-            "area": 97965,
+            "area": 98895,
             "iscrowd": 0,
             "bbox": [
-                566,
-                618,
-                321,
-                325
+                645,
+                652,
+                290,
+                347
             ],
             "category_id": 18356,
             "ignore": 0,
             "segmentation": [],
-            "id": 903,
-            "image_id": 239
+            "id": 95523,
+            "image_id": 1455
         }
     ],
     "categories": [
