@@ -5,8 +5,8 @@ from tqdm import tqdm
 from pathlib import Path
 
 from src.config import get_optimizer
-from .utils.logger import create_experiment_dir, Logger
-from .utils.visualizer import save_loss_curve
+from ..utils.logger import create_experiment_dir, Logger
+from ..utils.visualizer import save_loss_curve
 
 def train_epoch(model, train_loader, optimizer, device, epoch, num_epochs):
     model.train()
@@ -45,7 +45,7 @@ def validate_epoch(model, val_loader, device):
     
     return total_loss / len(val_loader)
 
-def train_model(model, train_loader, val_loader, cfg):
+def train_pytorch(model, train_loader, val_loader, cfg):
     """
     모델 학습 함수
     

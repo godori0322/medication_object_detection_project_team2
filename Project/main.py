@@ -1,5 +1,5 @@
 # src/main.py
-from src import models
+from src.models import yolo_v5, faster_rcnn, ssd
 from src.train import train_model
 from src.test import run_test
 from src.config import get_config, get_device
@@ -17,18 +17,13 @@ def main():
 
     # 데이터로더 생성
     train_loader, val_loader, test_loader, mappings = create_dataloaders(cfg)
+
+    # 모델 객체 생성(모델 변경을 위해 이 부분을 수정하세요)
+    model = yolo_v5(num_classes=cfg.num_classes, pretrained=True)
+    # model = faster_rcnn(num_classes=cfg.num_classes, pretrained=True)
+    # model = ssd(num_classes=cfg.num_classes, pretrained=True)
     
-    # 모델 객체 생성
-    if cfg.model_type.lower() == 'yolo':
-        model = models.yolo_v5(num_classes=cfg.num_classes)
-    elif cfg.model_type.lower() == 'rcnn':
-        model = models.faster_rcnn(num_classes=cfg.num_classes)
-    elif cfg.model_type.lower() == 'ssd':
-        model = models.ssd(num_classes=cfg.num_classes)
-    else:
-        raise ValueError(f"지원하지 않는 모델 타입: {cfg.model_type}")
-    
-    # 모델 학습
+    # 모델 학습(YOLO 모델일 때와 아닐 때 파이프라인 분리) & outputs 디렉토리에 결과 저장
     trained_model = train_model(model, train_loader, val_loader, cfg)
     
     # 모델 성능 평가(mAP@50)

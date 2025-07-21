@@ -23,7 +23,7 @@ def run_test(trained_model, test_loader, cfg):
 
     # YOLO: outputs = [N, 6] (x1, y1, x2, y2, conf, class)
     # RCNN/SSD: outputs = list of dicts
-    model_type = cfg.model_type.lower()
+    model_type = trained_model.__class__.__name__.lower()
     if model_type not in ['yolo', 'rcnn', 'ssd']:
         raise ValueError(f"Unsupported model type: {model_type}")
 
