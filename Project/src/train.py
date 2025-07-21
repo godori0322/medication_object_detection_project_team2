@@ -1,13 +1,9 @@
 # src/train.py
 
 import torch
-from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
-import random
-from sklearn.model_selection import train_test_split
 from pathlib import Path
 
-from src.dataset import PillDataset
 from src.config import get_optimizer
 from .utils.logger import create_experiment_dir, Logger
 from .utils.visualizer import save_loss_curve

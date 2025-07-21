@@ -53,4 +53,4 @@ def create_dataloaders(cfg):
     val_loader   = DataLoader(val_dataset, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_workers, collate_fn=collate_fn)
     test_loader  = DataLoader(test_dataset, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_workers, collate_fn=collate_fn)
 
-    return train_loader, val_loader, test_loader
+    return train_loader, val_loader, test_loader, mappings
