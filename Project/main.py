@@ -2,6 +2,7 @@
 
 from src.train import create_dataloaders, train_model
 from src import models
+from src.test import run_test
 from src.config import get_config, get_device
 from src.utils.evaluater import evaluate_map_50
 from src.utils.logger import save_metric_result
@@ -14,8 +15,10 @@ def main():
     # config로 경로 및 하이퍼파라미터 설정
     cfg = get_config()
 
+    # filtered_df, mappings = prepare_clean_annotations(cfg)
+
     # 데이터로더 생성
-    train_loader, val_loader = create_dataloaders(cfg)
+    train_loader, val_loader, test_loader = create_dataloaders()
     
     # 모델 객체 생성
     model = models.yolo_v5(num_classes=cfg.num_classes)
@@ -26,6 +29,9 @@ def main():
     # 모델 성능 평가(mAP@50)
     # metrics = evaluate_map_50(trained_model, val_loader, cfg)
     # save_metric_result(metrics, cfg.output_dir / "metrics.csv")
+
+    # test 데이터 기반으로 결과 예측
+    run_test(trained_model, test_loader, cfg)
 
     print("\n✅ 모든 과정이 완료되었습니다!")
 
