@@ -1,118 +1,118 @@
-# src/dataset
-
 import os
 import json
-import torch
-import numpy as np
-from PIL import Image
-from torch.utils.data import Dataset
-from pathlib import Path
 
-# 데이터 증강을 위한 Albumentations 라이브러리 (선택 사항)
+import cv2
+import torch
+from torch.utils.data import Dataset
+
+# 데이터 증강
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
+from sklearn.model_selection import train_test_split
+
 
 class PillDataset(Dataset):
-    """
-    개별 JSON 파일로 구성된 경구약제 데이터셋을 위한 커스텀 클래스
-    """
-    def __init__(self, image_dir, annotation_dir, transforms=None):
-        """
-        Args:
-            image_dir (string): 이미지 파일들이 있는 디렉토리 경로
-            annotation_dir (string): 개별 JSON 어노테이션 파일들이 있는 상위 디렉토리 경로
-            transforms (callable, optional): 샘플에 적용될 전처리(transform)
-        """
-        self.image_dir = Path(image_dir)
-        self.annotation_dir = Path(annotation_dir)
-        self.transforms = transforms
-        
-        # annotation_dir 및 모든 하위 디렉토리에서 .json 파일을 찾습니다.
-        self.json_paths = sorted(list(self.annotation_dir.glob('**/*.json')))
-        
+    def __init__(self, image_files, image_dir, annotation_dir, transform=None):
+        self.image_dir = image_dir
+        self.annotation_dir = annotation_dir
+        self.transform = transform
+        self.image_files = image_files
+    
     def __len__(self):
-        return len(self.json_paths)
-
+        return len(self.image_files)
+    
     def __getitem__(self, idx):
-        # 해당 인덱스의 JSON 파일 경로를 가져옵니다.
-        json_path = self.json_paths[idx]
-        
-        # JSON 파일에서 어노테이션 정보 로드
-        with open(json_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
+        img_name = self.image_files[idx]
+        img_id = os.path.splitext(img_name)[0]
+        img_path = os.path.join(self.image_dir, img_name)
 
-        # 이미지 파일명은 JSON 파일명에서 확장자만 변경하여 구성
-        image_filename = json_path.stem + '.png'
-        image_path = self.image_dir / image_filename
-        
-        # 이미지를 Numpy 배열로 불러오기 (transforms 적용을 위해)
-        image = np.array(Image.open(image_path).convert("RGB"))
-        
-        boxes = []
+        # OpenCV로 이미지 로딩
+        image = cv2.imread(img_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        h, w, _ = image.shape
+
+        ann_dir = os.path.join(self.annotation_dir, f"{img_id.split('_')[0]}_json")
+        bboxes = []
         labels = []
-        
-        # JSON 파일 내의 'annotations' 리스트에서 정보 추출
-        for ann in data.get('annotations', []):
-            bbox = ann.get('bbox')
-            category_id = ann.get('category_id')
-            
-            if bbox and category_id is not None:
-                # COCO 형식 [x, y, w, h] -> [xmin, ymin, xmax, ymax] 형식으로 변환
-                xmin, ymin = bbox[0], bbox[1]
-                xmax, ymax = xmin + bbox[2], ymin + bbox[3]
-                boxes.append([xmin, ymin, xmax, ymax])
-                labels.append(category_id)
 
-        target = {"boxes": boxes, "labels": labels}
+        for dirname in os.listdir(ann_dir):
+            for file in os.listdir(os.path.join(ann_dir, dirname)):
+                if file.endswith(".json") and img_id in file:
+                    with open(os.path.join(ann_dir, dirname, file), "r") as f:
+                        ann = json.load(f)
+                        label = ann["categories"][0]["name"]
+                        class_id = ann["annotations"][0]["category_id"]
+                        if class_id == -1:
+                            continue
+                        x, y, bw, bh = ann["annotations"][0]["bbox"]
+                        x_min, y_min = x, y
+                        x_max, y_max = x + bw, y + bh
+                        bboxes.append([x_min, y_min, x_max, y_max])
+                        labels.append(class_id)
 
-        # --- 데이터 증강(Data Augmentation) 적용 부분 ---
-        if self.transforms:
-            # Albumentations 라이브러리를 사용할 경우
-            transformed = self.transforms(image=image, bboxes=target['boxes'], labels=target['labels'])
+        normalized_bboxes = []
+        for bbox in bboxes:
+            x_min, y_min, x_max, y_max = bbox
+            normalized_bboxes.append([x_min / w, y_min / h, x_max / w, y_max / h])
+
+        if self.transform:
+            transformed = self.transform(image=image, bboxes=normalized_bboxes, labels=labels)
             image = transformed['image']
-            target['boxes'] = torch.tensor(transformed['bboxes'], dtype=torch.float32)
-            target['labels'] = torch.tensor(transformed['labels'], dtype=torch.int64)
-            
-            # 증강 후 바운딩 박스가 사라졌을 경우 처리
-            if len(target['boxes']) == 0:
-                target['boxes'] = torch.zeros((0, 4), dtype=torch.float32)
+            bboxes = transformed['bboxes']
+            labels = transformed['labels']
         else:
-            # 이미지를 640x640으로 리사이즈
-            original_height, original_width = image.shape[:2]
-            target_size = 640
-            
-            # 이미지 리사이즈
-            image_pil = Image.fromarray(image)
-            image_pil = image_pil.resize((target_size, target_size), Image.LANCZOS)
-            image = np.array(image_pil)
-            
-            # 바운딩 박스 스케일링
-            scale_x = target_size / original_width
-            scale_y = target_size / original_height
-            
-            if len(target['boxes']) > 0:
-                scaled_boxes = []
-                for box in target['boxes']:
-                    xmin, ymin, xmax, ymax = box
-                    scaled_boxes.append([
-                        xmin * scale_x,
-                        ymin * scale_y,
-                        xmax * scale_x,
-                        ymax * scale_y
-                    ])
-                target['boxes'] = scaled_boxes
-            
-            # 기본 전처리 (Numpy -> Tensor)
-            image = torch.as_tensor(image, dtype=torch.float32).permute(2, 0, 1) / 255.0
-            target['boxes'] = torch.as_tensor(target['boxes'], dtype=torch.float32)
-            target['labels'] = torch.as_tensor(target['labels'], dtype=torch.int64)
+            bboxes = normalized_bboxes
 
-        # 바운딩 박스가 없는 이미지에 대한 예외 처리
-        if len(target['boxes']) == 0:
-            target['boxes'] = torch.zeros((0, 4), dtype=torch.float32)
-            
-        # image_id 등 추가 정보 (필요시)
-        target["image_id"] = torch.tensor([idx])
-        
-        return image, target
+        # 변환된 bbox (pascal_voc) → YOLO 포맷으로 변환
+        targets = []
+        for bbox, label in zip(bboxes, labels):
+            x_min, y_min, x_max, y_max = bbox
+            bw = x_max - x_min
+            bh = y_max - y_min
+            x_c = x_min + bw / 2
+            y_c = y_min + bh / 2
+            targets.append([label, x_c, y_c, bw, bh])
+
+        return image, torch.tensor(targets, dtype=torch.float32)
+
+
+# --- 데이터 증강 및 변환 정의 ---
+def get_train_transform():
+    return A.Compose([
+        # A.HorizontalFlip(p=0.5),
+        # A.RandomBrightnessContrast(p=0.2),
+        # A.Rotate(limit=15, p=0.3),
+        # A.Normalize(mean=(0, 0, 0), std=(1, 1, 1)),
+        ToTensorV2() # 이미지를 PyTorch 텐서로 변환
+    ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=['labels']))
+
+
+def get_valid_transform():
+    return A.Compose([
+        # A.Normalize(mean=(0, 0, 0), std=(1, 1, 1)),
+        ToTensorV2()
+    ], bbox_params=A.BboxParams(format='pascal_voc', label_fields=['labels']))
+
+
+if __name__ == '__main__':
+    from config import get_config
+
+    config = get_config()
+    # --- 테스트 코드 ---
+    image_files = []
+    for f in os.listdir(config.train_image_dir):
+        if f.endswith(".png"):
+            image_files.append(f)
+
+    train_images, val_images = train_test_split(image_files, test_size=0.1, random_state=42, shuffle=True)
+
+    print(len(train_images), len(val_images))
+
+    # 1. 데이터셋 인스턴스 생성 (증강 적용)
+    dataset = PillDataset(
+        image_files=val_images,
+        image_dir=config.train_image_dir,
+        annotation_dir=config.annotation_dir,
+        transform=get_train_transform()
+    )

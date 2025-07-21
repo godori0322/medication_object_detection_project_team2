@@ -14,6 +14,9 @@ import torch
 import torch.optim as optim
 import argparse
 
+BATCH_SIZE = 16
+NUM_WORKERS = 0
+
 # --- 기본 경로 설정 ---
 # 이 파일(config.py)의 부모 디렉토리(src)의 부모 디렉토리(Project)를 기준 경로로 설정
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -22,7 +25,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = BASE_DIR / "data" / "ai03-level1-project"
 TRAIN_IMAGE_DIR = DATA_DIR / "train_images"
 TEST_IMAGE_DIR = DATA_DIR / "test_images"
-TRAIN_ANNOTATION_DIR = DATA_DIR / "train_annotations" 
+TRAIN_ANNOTATION_DIR = DATA_DIR / "train_annotations"
+
+CSV_TRAIN_DATA_DIR = BASE_DIR / "data_csv"
+FILLTER_CSV_TRAIN_DATA_DIR = CSV_TRAIN_DATA_DIR / "model_train_data_csv"
 
 # --- 결과물 경로 ---
 OUTPUT_DIR = BASE_DIR / "Project" / "outputs"
@@ -57,14 +63,15 @@ def get_optimizer(model, cfg):
 def get_config():
     parser = argparse.ArgumentParser(description="Training configuration")
 
-    parser.add_argument('--device', type=str, default='cuda', help='Device to use (cuda, mps or cpu)')
-    parser.add_argument('--model_type', type=str, default='yolo', choices=['yolo', 'rcnn', 'ssd'], help='Model type to use')
+    default_device = get_device()
+
+    parser.add_argument('--device', type=str, default=default_device, help='Device to use (cuda, mps or cpu)')
     parser.add_argument('--num_epochs', type=int, default=10, help='Number of training epochs')
     parser.add_argument('--num_classes', type=int, default=44199, help='Number of classes')
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size for training')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
     parser.add_argument('--optimizer', type=str, default='adam', help='Optimzer')
-    parser.add_argument('--num_workers', type=int, default=4, help='Number of workers')
+    parser.add_argument('--num_workers', type=int, default=0, help='Number of workers')
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='Weight decay')
     parser.add_argument('--confidence_threshold', type=float, default=0.5, help='Confidence threshold')
     parser.add_argument('--momentum', type=float, default=0.01, help='Momentum')

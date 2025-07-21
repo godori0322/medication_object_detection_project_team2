@@ -56,12 +56,12 @@
     "type": "instances",
     "annotations": [
         {
-            "area": 128250,
+            "area": 142848,
             "iscrowd": 0,
             "bbox": [
-                566,
-                131,
-                285,
+                125,
+                695,
+                270,
                 450
             ],
             "category_id": 16550,

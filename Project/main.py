@@ -1,6 +1,7 @@
 # src/main.py
 
-from src.train import create_dataloaders, train_model
+from src.dataloader import create_dataloaders
+from src.train import train_model
 from src import models
 from src.test import run_test
 from src.config import get_config, get_device
