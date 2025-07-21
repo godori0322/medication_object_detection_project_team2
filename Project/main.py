@@ -3,8 +3,8 @@
 from src.train import create_dataloaders, train_model
 from src import models
 from src.config import get_config, get_device
-from src.utils.evaluater import evaluate_map_50
-from src.utils.logger import save_metric_result
+# from src.utils.evaluater import evaluate_map_50
+# from src.utils.logger import save_metric_result
 
 def main():
     # 현재 사용 중인 device 확인
