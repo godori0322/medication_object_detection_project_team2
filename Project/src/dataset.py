@@ -1,5 +1,9 @@
 # src/dataset
 import os
+<<<<<<< HEAD
+=======
+import json
+>>>>>>> feature/arc
 import torch
 import numpy as np
 from PIL import Image
@@ -102,4 +106,8 @@ class PillTestDataset(Dataset):
             "image_name": file_name
         }
 
+<<<<<<< HEAD
         return image_tensor, target
+=======
+        return image_tensor, target
+>>>>>>> feature/arc

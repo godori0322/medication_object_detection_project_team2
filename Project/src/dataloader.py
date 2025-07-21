@@ -1,3 +1,9 @@
+<<<<<<< HEAD
+=======
+import pandas as pd
+import json
+from pathlib import Path
+>>>>>>> feature/arc
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from src.dataset import PillDataset, PillTestDataset
@@ -50,4 +56,8 @@ def create_dataloaders(cfg):
     val_loader   = DataLoader(val_dataset, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_workers, collate_fn=collate_fn)
     test_loader  = DataLoader(test_dataset, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_workers, collate_fn=collate_fn)
 
+<<<<<<< HEAD
     return train_loader, val_loader, test_loader, mappings
+=======
+    return train_loader, val_loader, test_loader, mappings
+>>>>>>> feature/arc
