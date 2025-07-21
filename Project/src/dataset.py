@@ -1,9 +1,5 @@
 # src/dataset
 import os
-<<<<<<< HEAD
-=======
-import json
->>>>>>> feature/arc
 import torch
 import numpy as np
 from PIL import Image
@@ -11,14 +7,8 @@ from torch.utils.data import Dataset
 from src.utils.boxes import coco_to_voc
 from src.utils.tensor_utils import safe_tensor
 
-import cv2
 import torch
 from torch.utils.data import Dataset
-
-# 데이터 증강
-import albumentations as A
-
-from sklearn.model_selection import train_test_split
 
 
 #datasets/pill_dataset.py
@@ -106,8 +96,4 @@ class PillTestDataset(Dataset):
             "image_name": file_name
         }
 
-<<<<<<< HEAD
         return image_tensor, target
-=======
-        return image_tensor, target
->>>>>>> feature/arc
