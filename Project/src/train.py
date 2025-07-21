@@ -12,10 +12,14 @@ def train_epoch(model, train_loader, optimizer, device, epoch, num_epochs):
     model.train()
     train_loop = tqdm(train_loader, leave=True)
     total_loss = 0
+
+    # GPU 메모리 초기화
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
     
     for images, targets in train_loop:
         images = [img.to(device) for img in images]
-        targets = [t.to(device) for t in targets]
+        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
         loss_dict = model(images, targets)
         losses = sum(loss for loss in loss_dict.values())
@@ -135,4 +139,4 @@ def train_model(model, train_loader, val_loader, cfg):
     logger.save_loss_history_csv(train_losses, val_losses)
 
     print(f"{model_name.upper()} 모델 학습 완료")
-    return model, checkpoint_path
+    return model

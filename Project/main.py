@@ -27,7 +27,7 @@ def main():
         model = models.ssd(num_classes=cfg.num_classes)
     
     # 모델 학습
-    trained_model, checkpoint_path = train_model(model, train_loader, val_loader, cfg)
+    trained_model = train_model(model, train_loader, val_loader, cfg)
     
     # 모델 성능 평가(mAP@50)
     # metrics = evaluate_map_50(trained_model, val_loader, cfg)
