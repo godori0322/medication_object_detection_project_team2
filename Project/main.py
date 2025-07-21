@@ -21,7 +21,12 @@ def main():
     train_loader, val_loader, test_loader = create_dataloaders()
     
     # 모델 객체 생성
-    model = models.yolo_v5(num_classes=cfg.num_classes)
+    if cfg.model_type.lower() == 'yolo':
+        model = models.yolo_v5(num_classes=cfg.num_classes)
+    elif cfg.model_type.lower() == 'rcnn':
+        model = models.faster_rcnn(num_classes=cfg.num_classes)
+    elif cfg.model_type.lower() == 'ssd':
+        model = models.ssd(num_classes=cfg.num_classes)
     
     # 모델 학습
     trained_model, checkpoint_path = train_model(model, train_loader, val_loader, cfg)

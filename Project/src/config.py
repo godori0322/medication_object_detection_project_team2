@@ -58,6 +58,7 @@ def get_config():
     parser = argparse.ArgumentParser(description="Training configuration")
 
     parser.add_argument('--device', type=str, default='cuda', help='Device to use (cuda, mps or cpu)')
+    parser.add_argument('--model_type', type=str, default='yolo', choices=['yolo', 'rcnn', 'ssd'], help='Model type to use')
     parser.add_argument('--num_epochs', type=int, default=10, help='Number of training epochs')
     parser.add_argument('--num_classes', type=int, default=44199, help='Number of classes')
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size for training')
