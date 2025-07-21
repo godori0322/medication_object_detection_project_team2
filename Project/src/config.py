@@ -13,6 +13,7 @@ from pathlib import Path
 import torch
 import torch.optim as optim
 import os
+import sys
 import argparse
 
 BATCH_SIZE = 16
@@ -66,6 +67,9 @@ def get_optimizer(model, cfg):
 
 # argparse를 이용한 유동적인 하이퍼파라미터 조정
 def get_config():
+    if any(env in sys.modules for env in ['google.colab', 'ipykernel']):
+        sys.argv = ['']  # Jupyter/Colab에서 argparse 충돌 방지
+
     parser = argparse.ArgumentParser(description="Training configuration")
 
     default_device = get_device()
