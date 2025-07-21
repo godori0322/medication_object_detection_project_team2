@@ -12,10 +12,6 @@ def train_epoch(model, train_loader, optimizer, device, epoch, num_epochs):
     model.train()
     train_loop = tqdm(train_loader, leave=True)
     total_loss = 0
-
-    # GPU 메모리 초기화
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
     
     for images, targets in train_loop:
         images = [img.to(device) for img in images]
@@ -116,6 +112,10 @@ def train_model(model, train_loader, val_loader, cfg):
     train_losses = []
     val_losses = []
     best_val_loss = float('inf')
+
+    # GPU 메모리 초기화
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     for epoch in range(cfg.num_epochs):
         avg_train_loss = train_epoch(model, train_loader, optimizer, cfg.device, epoch, cfg.num_epochs)

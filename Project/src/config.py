@@ -12,6 +12,7 @@
 from pathlib import Path
 import torch
 import torch.optim as optim
+import os
 import argparse
 
 BATCH_SIZE = 16
@@ -19,7 +20,11 @@ NUM_WORKERS = 0
 
 # --- 기본 경로 설정 ---
 # 이 파일(config.py)의 부모 디렉토리(src)의 부모 디렉토리(Project)를 기준 경로로 설정
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+try:
+    BASE_DIR = Path(__file__).resolve().parent.parent.parent
+except NameError:
+    # Colab에서 __file__이 없는 경우, 수동 경로 지정
+    BASE_DIR = Path(os.getcwd()).resolve()  # 현재 작업 디렉토리
 
 # --- 데이터 경로 ---
 DATA_DIR = BASE_DIR / "data" / "ai03-level1-project"

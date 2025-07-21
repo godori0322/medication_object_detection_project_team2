@@ -25,6 +25,8 @@ def main():
         model = models.faster_rcnn(num_classes=cfg.num_classes)
     elif cfg.model_type.lower() == 'ssd':
         model = models.ssd(num_classes=cfg.num_classes)
+    else:
+        raise ValueError(f"지원하지 않는 모델 타입: {cfg.model_type}")
     
     # 모델 학습
     trained_model = train_model(model, train_loader, val_loader, cfg)
