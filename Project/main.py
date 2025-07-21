@@ -16,10 +16,6 @@ def main():
     cfg = get_config()
 
     # 데이터로더 생성
-<<<<<<< HEAD
-
-=======
->>>>>>> feature/arc
     train_loader, val_loader, test_loader, mappings = create_dataloaders(cfg)
     
     # 모델 객체 생성
