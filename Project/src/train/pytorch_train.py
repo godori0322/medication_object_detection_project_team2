@@ -5,16 +5,48 @@ from tqdm import tqdm
 from pathlib import Path
 
 from src.config import get_optimizer
-from .utils.logger import create_experiment_dir, Logger
-from .utils.visualizer import save_loss_curve
+from src.utils.logger import create_experiment_dir, Logger
+from src.utils.visualizer import save_loss_curve
 
+<<<<<<< HEAD:Project/src/train.py
+=======
+def collate_fn(batch):
+    images, targets = tuple(zip(*batch))
+    images = torch.stack(images, 0)
+    return images, targets
+
+def create_dataloaders(config):
+    print("Loading data...")
+    full_dataset = PillDataset(config.train_image_dir, config.annotation_dir)
+    
+    print(f"Total dataset size: {len(full_dataset)}")
+    
+    # 데이터셋이 비어있는지 확인
+    if len(full_dataset) == 0:
+        raise ValueError(f"Dataset is empty! Check paths:\n"
+                        f"Image dir: {config.train_image_dir}\n"
+                        f"Annotation dir: {config.annotation_dir}")
+    
+    # 데이터 분할
+    indices = list(range(len(full_dataset)))
+    train_indices, val_indices = train_test_split(indices, test_size=0.1, random_state=42, shuffle=True)
+    train_dataset = Subset(full_dataset, train_indices)
+    val_dataset = Subset(full_dataset, val_indices)
+    
+    # 데이터로더 생성
+    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, collate_fn=collate_fn, num_workers=config.num_workers)
+    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=config.num_workers)
+
+    return train_loader, val_loader
+
+>>>>>>> feature/models:Project/src/train/pytorch_train.py
 def train_epoch(model, train_loader, optimizer, device, epoch, num_epochs):
     model.train()
     train_loop = tqdm(train_loader, leave=True)
     total_loss = 0
     
     for images, targets in train_loop:
-        images = [img.to(device) for img in images]
+        images = images.to(device)
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
         loss_dict = model(images, targets)
@@ -36,8 +68,13 @@ def validate_epoch(model, val_loader, device):
     
     with torch.no_grad():
         for images, targets in val_loader:
+<<<<<<< HEAD:Project/src/train.py
             images = [img.to(device) for img in images]
             targets = [t.to(device) for t in targets]
+=======
+            images = images.to(device)
+            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+>>>>>>> feature/models:Project/src/train/pytorch_train.py
             
             loss_dict = model(images, targets)
             losses = sum(loss for loss in loss_dict.values())
@@ -45,7 +82,7 @@ def validate_epoch(model, val_loader, device):
     
     return total_loss / len(val_loader)
 
-def train_model(model, train_loader, val_loader, cfg):
+def train_pytorch(model, train_loader, val_loader, cfg):
     """
     모델 학습 함수
     
@@ -56,7 +93,7 @@ def train_model(model, train_loader, val_loader, cfg):
         config: 하이퍼 파라미터 관리 config
     """
 
-    # 실험 결과 저장용 디렉토리 생성 (output_dir 기반)
+    # 실�� 결과 저장용 디렉토리 생성 (output_dir 기반)
     experiment_dir = create_experiment_dir(cfg.output_dir, model.__class__.__name__)
     print(f"Experiment directory created at: {experiment_dir}")
     
@@ -139,4 +176,30 @@ def train_model(model, train_loader, val_loader, cfg):
     logger.save_loss_history_csv(train_losses, val_losses)
 
     print(f"{model_name.upper()} 모델 학습 완료")
+<<<<<<< HEAD:Project/src/train.py
     return model
+=======
+    return model, checkpoint_path
+
+if __name__ == '__main__':
+    from src.config import get_config
+    from src.models.yolo_v5 import get_yolov5_model
+
+    # 설정 로드
+    cfg = get_config()
+
+    # 데이터로더 생성
+    train_loader, val_loader = create_dataloaders(cfg)
+
+    # 모델 생성
+    # cfg에 정의된 yolo_model_name과 num_classes를 사용
+    model = get_yolov5_model(
+        model_name=cfg.yolo_model_name, 
+        num_classes=cfg.num_classes
+    )
+
+    # 모델 학습
+    trained_model, best_model_path = train_model(model, train_loader, val_loader, cfg)
+
+    print(f"학습 완료. 최적 모델은 다음 경로에 저장되었습니다: {best_model_path}")
+>>>>>>> feature/models:Project/src/train/pytorch_train.py
