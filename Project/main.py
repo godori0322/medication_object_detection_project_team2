@@ -1,6 +1,7 @@
 # src/main.py
 from src import models
 from src.train import train_model
+from src.test import run_test
 from src.config import get_config, get_device
 from src.utils.evaluater import evaluate_map_50
 from src.utils.logger import save_metric_result
@@ -13,8 +14,6 @@ def main():
     
     # config로 경로 및 하이퍼파라미터 설정
     cfg = get_config()
-
-    # filtered_df, mappings = prepare_clean_annotations(cfg)
 
     # 데이터로더 생성
     train_loader, val_loader, test_loader, mappings = create_dataloaders(cfg)
@@ -43,4 +42,4 @@ if __name__ == "__main__":
     main()
 
 ## 실행 예시(CLI에서)
-## python src/main.py --num_epochs 30 --lr 0.0005 --batch_size 64
+## python src/main.py --model_type yolo --num_epochs 30 --lr 0.0005 --batch_size 64

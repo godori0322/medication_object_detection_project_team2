@@ -10,8 +10,6 @@ from torchvision.utils import draw_bounding_boxes
 from torchvision.transforms.functional import to_pil_image
 
 from src.utils.evaluater import evaluate_map_50
-from src.dataset import get_test_dataloader
-
 
 def run_test(trained_model, test_loader, cfg):
     result_dir = Path(cfg.output_dir) / "test"
@@ -75,12 +73,12 @@ def run_test(trained_model, test_loader, cfg):
     print(f"[✓] submission.csv 저장 완료: {result_dir / 'submission.csv'}")
 
     # mAP 평가
-    metrics = evaluate_map_50(trained_model, test_loader, cfg)
-    map_result_path = result_dir / "map_result.csv"
-    with open(map_result_path, mode="w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(["metric", "value"])
-        for key, value in metrics.items():
-            writer.writerow([key, value])
+    #metrics = evaluate_map_50(trained_model, test_loader, cfg)
+    #map_result_path = result_dir / "map_result.csv"
+    #with open(map_result_path, mode="w", newline="") as f:
+    #    writer = csv.writer(f)
+    #    writer.writerow(["metric", "value"])
+    #    for key, value in metrics.items():
+    #        writer.writerow([key, value])
 
-    print(f"[✓] mAP 결과 저장 완료: {map_result_path}")
+    # print(f"[✓] mAP 결과 저장 완료: {map_result_path}")
