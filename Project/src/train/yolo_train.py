@@ -17,7 +17,7 @@ def train_yolo(model, cfg):
     os.chdir(cfg.output_dir)  # 현재 작업 디렉토리를 output_dir로 변경(상대경로 오작동 방지)
     
     # 학습 실행
-    results = model.train(
+    model.train(
         data=str(data_yaml),
         epochs=cfg.num_epochs,
         imgsz=640,
@@ -27,6 +27,10 @@ def train_yolo(model, cfg):
         project=str(cfg.output_dir),
         name=f"yolo_experiment"
     )
+
+    # 모델 평가
+    metrics = model.val()
+    print(f"Evaluation metrics: {metrics}")
     
     print(f"YOLO 학습 완료")
     return model

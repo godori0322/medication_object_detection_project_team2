@@ -8,9 +8,6 @@ from src.config import get_optimizer
 from ..utils.logger import create_experiment_dir, Logger
 from ..utils.visualizer import save_loss_curve
 
-<<<<<<< HEAD
-<<<<<<< HEAD:Project/src/train.py
-=======
 def collate_fn(batch):
     images, targets = tuple(zip(*batch))
     images = torch.stack(images, 0)
@@ -40,9 +37,6 @@ def create_dataloaders(config):
 
     return train_loader, val_loader
 
->>>>>>> feature/models:Project/src/train/pytorch_train.py
-=======
->>>>>>> dev
 def train_epoch(model, train_loader, optimizer, device, epoch, num_epochs):
     model.train()
     train_loop = tqdm(train_loader, leave=True)
