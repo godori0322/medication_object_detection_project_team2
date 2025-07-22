@@ -5,9 +5,10 @@ from tqdm import tqdm
 from pathlib import Path
 
 from src.config import get_optimizer
-from src.utils.logger import create_experiment_dir, Logger
-from src.utils.visualizer import save_loss_curve
+from ..utils.logger import create_experiment_dir, Logger
+from ..utils.visualizer import save_loss_curve
 
+<<<<<<< HEAD
 <<<<<<< HEAD:Project/src/train.py
 =======
 def collate_fn(batch):
@@ -40,13 +41,15 @@ def create_dataloaders(config):
     return train_loader, val_loader
 
 >>>>>>> feature/models:Project/src/train/pytorch_train.py
+=======
+>>>>>>> dev
 def train_epoch(model, train_loader, optimizer, device, epoch, num_epochs):
     model.train()
     train_loop = tqdm(train_loader, leave=True)
     total_loss = 0
     
     for images, targets in train_loop:
-        images = images.to(device)
+        images = [img.to(device) for img in images]
         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
         loss_dict = model(images, targets)
@@ -68,13 +71,8 @@ def validate_epoch(model, val_loader, device):
     
     with torch.no_grad():
         for images, targets in val_loader:
-<<<<<<< HEAD:Project/src/train.py
             images = [img.to(device) for img in images]
             targets = [t.to(device) for t in targets]
-=======
-            images = images.to(device)
-            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
->>>>>>> feature/models:Project/src/train/pytorch_train.py
             
             loss_dict = model(images, targets)
             losses = sum(loss for loss in loss_dict.values())
@@ -93,7 +91,7 @@ def train_pytorch(model, train_loader, val_loader, cfg):
         config: 하이퍼 파라미터 관리 config
     """
 
-    # 실�� 결과 저장용 디렉토리 생성 (output_dir 기반)
+    # 실험 결과 저장용 디렉토리 생성 (output_dir 기반)
     experiment_dir = create_experiment_dir(cfg.output_dir, model.__class__.__name__)
     print(f"Experiment directory created at: {experiment_dir}")
     
@@ -176,10 +174,7 @@ def train_pytorch(model, train_loader, val_loader, cfg):
     logger.save_loss_history_csv(train_losses, val_losses)
 
     print(f"{model_name.upper()} 모델 학습 완료")
-<<<<<<< HEAD:Project/src/train.py
     return model
-=======
-    return model, checkpoint_path
 
 if __name__ == '__main__':
     from src.config import get_config
@@ -202,4 +197,6 @@ if __name__ == '__main__':
     trained_model, best_model_path = train_model(model, train_loader, val_loader, cfg)
 
     print(f"학습 완료. 최적 모델은 다음 경로에 저장되었습니다: {best_model_path}")
->>>>>>> feature/models:Project/src/train/pytorch_train.py
+
+    return model
+

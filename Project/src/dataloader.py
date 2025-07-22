@@ -1,16 +1,9 @@
-<<<<<<< HEAD
-=======
-import pandas as pd
-import json
-from pathlib import Path
->>>>>>> feature/arc
 from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from src.dataset import PillDataset, PillTestDataset
 from src.transforms import get_train_transforms, get_valid_transforms, get_test_transforms
-from src.utils.tensor_utils import collate_fn
+from src.utils.tensor_utils import collate_fn, test_collate_fn
 from src.utils.data_utils import load_filtered_df, load_mappings
-
 
 def create_dataloaders(cfg):
     print("Loading data...")
@@ -54,10 +47,6 @@ def create_dataloaders(cfg):
     # 5. DataLoader 생성
     train_loader = DataLoader(train_dataset, batch_size=cfg.batch_size, shuffle=True, num_workers=cfg.num_workers, collate_fn=collate_fn)
     val_loader   = DataLoader(val_dataset, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_workers, collate_fn=collate_fn)
-    test_loader  = DataLoader(test_dataset, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_workers, collate_fn=collate_fn)
+    test_loader  = DataLoader(test_dataset, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_workers, collate_fn=test_collate_fn)
 
-<<<<<<< HEAD
     return train_loader, val_loader, test_loader, mappings
-=======
-    return train_loader, val_loader, test_loader, mappings
->>>>>>> feature/arc
