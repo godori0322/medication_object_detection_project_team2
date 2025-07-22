@@ -14,6 +14,11 @@ def train_yolo(model, cfg):
         device=cfg.device,
         batch=cfg.batch_size,
         lr0=cfg.lr,
+        lrf=0.01,
+        momentum=cfg.momentum,
+        weight_decay=cfg.weight_decay,
+        flipud=0.1,
+        fliplr=0.5,
         project=str(cfg.output_dir),
         name=f"yolo_experiment"
     )

@@ -27,7 +27,7 @@ def main():
     # 모델 학습(YOLO 모델일 때와 아닐 때 파이프라인 분리) & outputs 디렉토리에 결과 저장
     trained_model = train_model(model, train_loader, val_loader, cfg)
     
-    model_name = cfg.model_type.lower()
+    model_name = trained_model.__class__.__name__.lower()
     # YOLO 모델은 ultralytics 라이브러리로 성능평가 및 시각화까지
     if model_name == "yolo":
         run_test_yolo(trained_model, cfg)

@@ -169,28 +169,3 @@ def train_pytorch(model, train_loader, val_loader, cfg):
 
     print(f"{model_name.upper()} 모델 학습 완료")
     return model
-
-if __name__ == '__main__':
-    from src.config import get_config
-    from src.models.yolo_v5 import get_yolov5_model
-
-    # 설정 로드
-    cfg = get_config()
-
-    # 데이터로더 생성
-    train_loader, val_loader = create_dataloaders(cfg)
-
-    # 모델 생성
-    # cfg에 정의된 yolo_model_name과 num_classes를 사용
-    model = get_yolov5_model(
-        model_name=cfg.yolo_model_name, 
-        num_classes=cfg.num_classes
-    )
-
-    # 모델 학습
-    trained_model, best_model_path = train_model(model, train_loader, val_loader, cfg)
-
-    print(f"학습 완료. 최적 모델은 다음 경로에 저장되었습니다: {best_model_path}")
-
-    return model
-
