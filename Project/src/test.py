@@ -21,10 +21,9 @@ def run_test(trained_model, test_loader, cfg):
     submission = []
     annotation_id = 1
 
-    # YOLO: outputs = [N, 6] (x1, y1, x2, y2, conf, class)
     # RCNN/SSD: outputs = list of dicts
     model_type = trained_model.__class__.__name__.lower()
-    if model_type not in ['yolo', 'rcnn', 'ssd']:
+    if model_type not in ['rcnn', 'ssd']:
         raise ValueError(f"Unsupported model type: {model_type}")
 
     for images, image_ids in tqdm(test_loader, desc="Testing"):
@@ -35,16 +34,9 @@ def run_test(trained_model, test_loader, cfg):
             image_id_str = str(image_ids[idx])
             image_id = int(Path(image_id_str).stem)
 
-            if model_type == 'yolo':
-                boxes = output[:, :4].detach().cpu()
-                scores = output[:, 4].detach().cpu()
-                labels = output[:, 5].detach().cpu()
-            elif model_type in ['rcnn', 'ssd']:
-                boxes = output['boxes'].detach().cpu()
-                scores = output['scores'].detach().cpu()
-                labels = output['labels'].detach().cpu()
-            else:
-                raise ValueError(f"Unsupported model type: {model_type}")
+            boxes = output['boxes'].detach().cpu()
+            scores = output['scores'].detach().cpu()
+            labels = output['labels'].detach().cpu()
 
             # Draw and save box image
             img_with_boxes = draw_bounding_boxes(
