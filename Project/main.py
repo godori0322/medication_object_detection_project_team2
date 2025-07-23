@@ -1,5 +1,5 @@
 # src/main.py
-from src.models import yolo_v5, faster_rcnn, ssd
+from src.models import yolo_v5, yolo_v8, yolo_v11, faster_rcnn, ssd
 from src.train import train_model
 from src.test import run_test
 from src.yolo_test import run_test_yolo
