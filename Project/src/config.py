@@ -56,11 +56,11 @@ def get_device():
 
 # config에서 optimizer 관리하여 실험 용이하게
 def get_optimizer(model, cfg):
-    if cfg.optimizer == "adam":
+    if cfg.optimizer == "Adam":
         return optim.Adam(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
-    elif cfg.optimizer == 'adamw':
+    elif cfg.optimizer == 'AdamW':
          return optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
-    elif cfg.optimizer == "sgd":
+    elif cfg.optimizer == "SGD":
         return optim.SGD(model.parameters(), lr=cfg.lr, momentum=cfg.momentum)
     else:
         raise ValueError(f"Unsupported optimizer: {cfg.optimizer}")
@@ -79,7 +79,7 @@ def get_config():
     parser.add_argument('--num_classes', type=int, default=44199, help='Number of classes')
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size for training')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
-    parser.add_argument('--optimizer', type=str, default='adam', help='Optimzer')
+    parser.add_argument('--optimizer', type=str, default='Adam', help='Optimzer') # SGD, Adam, AdamW, NAdam, RAdam, RMSProp
     parser.add_argument('--num_workers', type=int, default=0, help='Number of workers')
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='Weight decay')
     parser.add_argument('--confidence_threshold', type=float, default=0.5, help='Confidence threshold')

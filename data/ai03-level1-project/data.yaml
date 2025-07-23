@@ -1,7 +1,7 @@
 path: ../data/ai03-level1-project
 
-train: train_images
-val: train_images
+train: images/train
+val: images/val
 
 nc: 73
 names: [
