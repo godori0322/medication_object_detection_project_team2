@@ -30,7 +30,7 @@ def run_test(trained_model, test_loader, cfg):
         outputs = trained_model(images)
 
         for idx, output in enumerate(outputs):
-            image_id_str = str(image_ids[idx])
+            image_id_str = image_ids[idx]["image_name"]
             image_id = int(Path(image_id_str).stem)
 
             boxes = output['boxes'].detach().cpu()
