@@ -25,10 +25,6 @@ def main():
     
     # 모델 학습(YOLO 모델일 때와 아닐 때 파이프라인 분리) & outputs 디렉토리에 결과 저장
     trained_model = train_model(model, train_loader, val_loader, cfg)
-    
-    # 모델 성능 평가(mAP@50)
-    # metrics = evaluate_map_50(trained_model, val_loader, cfg)
-    # save_metric_result(metrics, cfg.output_dir / "metrics.csv")
 
     # test 데이터 기반으로 결과 예측
     run_test(trained_model, test_loader, cfg)

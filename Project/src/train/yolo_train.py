@@ -7,6 +7,13 @@ def train_yolo(model, cfg):
     # data.yaml 경로 설정
     data_yaml = cfg.data_dir / "data.yaml"
 
+    # optimizer 설정
+    opt = ""
+    if cfg.optimizer == "adam" or cfg.optimizer == "adamw":
+        opt = "adam"
+    elif cfg.optimizer == "sgd":
+        opt = "sgd"
+
     # 실험 결과 저장용 디렉토리 생성 (output_dir 기반)
     experiment_dir = create_experiment_dir(cfg.output_dir, model.__class__.__name__)
     print(f"Experiment directory created at: {experiment_dir}")
@@ -23,6 +30,7 @@ def train_yolo(model, cfg):
         imgsz=640,
         device=cfg.device,
         batch=cfg.batch_size,
+        optimizer=opt,
         lr0=cfg.lr,
         project=str(cfg.output_dir),
         name=f"yolo_experiment"
