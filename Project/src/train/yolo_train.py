@@ -24,9 +24,5 @@ def train_yolo(model, cfg):
         name=f"yolo_experiment"
     )
 
-    # 모델 평가
-    metrics = model.val()
-    print(f"Evaluation metrics: {metrics}")
-    
     print(f"YOLO 학습 완료")
     return model
