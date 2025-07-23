@@ -1,15 +1,16 @@
 # src/test.py
 
-import os
 from pathlib import Path
-import torch
 from tqdm import tqdm
-import csv
 import pandas as pd
+import torch
 from torchvision.utils import draw_bounding_boxes
 from torchvision.transforms.functional import to_pil_image
+from torchmetrics.detection.mean_ap import MeanAveragePrecision
+import csv
 
-from src.utils.evaluater import evaluate_map_50
+def f1_score(p, r):
+    return 2 * p * r / (p + r + 1e-6)
 
 def run_test(trained_model, test_loader, cfg):
     result_dir = Path(cfg.output_dir) / "test"
@@ -21,11 +22,8 @@ def run_test(trained_model, test_loader, cfg):
     submission = []
     annotation_id = 1
 
-    # YOLO: outputs = [N, 6] (x1, y1, x2, y2, conf, class)
-    # RCNN/SSD: outputs = list of dicts
-    model_type = trained_model.__class__.__name__.lower()
-    if model_type not in ['yolo', 'rcnn', 'ssd']:
-        raise ValueError(f"Unsupported model type: {model_type}")
+    # 성능 평가를 위한 mAP 메트릭 초기화
+    metric = MeanAveragePrecision(iou_type="bbox", iou_thresholds=[0.5])
 
     for images, image_ids in tqdm(test_loader, desc="Testing"):
         images = images.to(cfg.device)
@@ -35,16 +33,9 @@ def run_test(trained_model, test_loader, cfg):
             image_id_str = str(image_ids[idx])
             image_id = int(Path(image_id_str).stem)
 
-            if model_type == 'yolo':
-                boxes = output[:, :4].detach().cpu()
-                scores = output[:, 4].detach().cpu()
-                labels = output[:, 5].detach().cpu()
-            elif model_type in ['rcnn', 'ssd']:
-                boxes = output['boxes'].detach().cpu()
-                scores = output['scores'].detach().cpu()
-                labels = output['labels'].detach().cpu()
-            else:
-                raise ValueError(f"Unsupported model type: {model_type}")
+            boxes = output['boxes'].detach().cpu()
+            scores = output['scores'].detach().cpu()
+            labels = output['labels'].detach().cpu()
 
             # Draw and save box image
             img_with_boxes = draw_bounding_boxes(
@@ -64,6 +55,11 @@ def run_test(trained_model, test_loader, cfg):
                 ])
                 annotation_id += 1
 
+        # mAP 메트릭 업데이트
+        targets_cpu = [{k: v.cpu() for k, v in t.items()} for t in targets]
+        outputs_cpu = [{k: v.cpu() for k, v in o.items()} for o in outputs]
+        metric.update(outputs_cpu, targets_cpu)
+
     # Save submission CSV
     df = pd.DataFrame(submission, columns=[
         "annotation_id", "image_id", "category_id",
@@ -72,13 +68,22 @@ def run_test(trained_model, test_loader, cfg):
     df.to_csv(result_dir / "submission.csv", index=False)
     print(f"[✓] submission.csv 저장 완료: {result_dir / 'submission.csv'}")
 
-    # mAP 평가
-    #metrics = evaluate_map_50(trained_model, test_loader, cfg)
-    #map_result_path = result_dir / "map_result.csv"
-    #with open(map_result_path, mode="w", newline="") as f:
-    #    writer = csv.writer(f)
-    #    writer.writerow(["metric", "value"])
-    #    for key, value in metrics.items():
-    #        writer.writerow([key, value])
+    # Compute metrics
+    results = metric.compute()
+    precision = results["precision"][0].item()
+    recall = results["recall"][0].item()
+    f1 = f1_score(precision, recall)
+    map50 = results["map_50"].item()
+    map_all = results["map"].item()
 
-    # print(f"[✓] mAP 결과 저장 완료: {map_result_path}")
+    # Save metrics to CSV
+    map_result_path = result_dir / "map_result.csv"
+    with open(map_result_path, mode="w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["metric", "value"])
+        writer.writerow(["mAP@0.5", map50])
+        writer.writerow(["mAP@0.5:0.95", map_all])
+        writer.writerow(["Precision", precision])
+        writer.writerow(["Recall", recall])
+        writer.writerow(["F1 Score", f1])
+    print(f"[✓] map_result.csv 저장 완료: {map_result_path}")
