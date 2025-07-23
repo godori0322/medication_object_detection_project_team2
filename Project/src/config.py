@@ -79,7 +79,7 @@ def get_config():
     parser.add_argument('--num_classes', type=int, default=44199, help='Number of classes')
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size for training')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
-    parser.add_argument('--optimizer', type=str, default='adam', help='Optimzer') # SGD, Adam, AdamW, NAdam, RAdam, RMSProp
+    parser.add_argument('--optimizer', type=str, default='Adam', help='Optimzer') # SGD, Adam, AdamW, NAdam, RAdam, RMSProp
     parser.add_argument('--num_workers', type=int, default=0, help='Number of workers')
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='Weight decay')
     parser.add_argument('--confidence_threshold', type=float, default=0.5, help='Confidence threshold')
