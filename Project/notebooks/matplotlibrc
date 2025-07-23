@@ -1,0 +1,5 @@
+# matplotlibrc
+
+# 1) 폰트 패밀리 설정
+font.family : sans-serif
+font.sans-serif : DejaVu Sans, Malgun Gothic, NanumGothic, Verdana

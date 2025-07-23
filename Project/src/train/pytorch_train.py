@@ -1,12 +1,31 @@
 # src/train.py
 
 import torch
+import pandas as pd
 from tqdm import tqdm
 from pathlib import Path
+from torchmetrics.detection.mean_ap import MeanAveragePrecision
 
 from src.config import get_optimizer
 from ..utils.logger import create_experiment_dir, Logger
 from ..utils.visualizer import save_loss_curve
+
+def validate_metrics_epoch(model, val_loader, device):
+    model.eval()
+    metric = MeanAveragePrecision()
+    
+    with torch.no_grad():
+        for images, targets in val_loader:
+            images = [img.to(device) for img in images]
+            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+            outputs = model(images)
+            
+            # torchmetrics는 dict(list[Tensor]) 형식을 요구함
+            # 즉, targets: list[dict], outputs: list[dict] → 그대로 사용 가능
+            metric.update(outputs, targets)
+    
+    return metric.compute()  # dict 형태로 반환 (mAP, recall, precision 등 포함)
 
 def train_epoch(model, train_loader, optimizer, device, epoch, num_epochs):
     model.train()
@@ -136,19 +155,41 @@ def train_pytorch(model, train_loader, val_loader, cfg):
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
+    metrics_log = []  # <- 성능 기록용 리스트
+
     for epoch in range(cfg.num_epochs):
         avg_train_loss = train_epoch(model, train_loader, optimizer, cfg.device, epoch, cfg.num_epochs)
         avg_val_loss = validate_loss_epoch(model, val_loader, cfg.device)
-        
+        metrics = validate_metrics_epoch(model, val_loader, cfg.device)
+
         train_losses.append(avg_train_loss)
         val_losses.append(avg_val_loss)
         
         print(f"Epoch {epoch+1}: Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
+        print(f"mAP: {metrics['map']:.4f}, Precision: {metrics['precision']:.4f}, Recall: {metrics['recall']:.4f}")
+
+        # 저장용 dict 생성
+        metrics_log.append({
+            "epoch": epoch + 1,
+            "train_loss": avg_train_loss,
+            "val_loss": avg_val_loss,
+            "map": metrics['map'].item(),
+            "map_50": metrics['map_50'].item(),
+            "map_75": metrics['map_75'].item(),
+            "precision": metrics['precision'].item(),
+            "recall": metrics['recall'].item()
+        })
 
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
             torch.save(model.state_dict(), checkpoint_path)
             print(f"모델저장. validation loss: {best_val_loss:.4f}")
+
+    # 성능 기록 CSV로 저장
+    metrics_df = pd.DataFrame(metrics_log)
+    metrics_csv_path = cfg.output_dir / f"{model_name}_metrics.csv"
+    metrics_df.to_csv(metrics_csv_path, index=False)
+    print(f"[✓] Validation 성능 기록 저장 완료: {metrics_csv_path}")
 
     # 손실 곡선 저장
     loss_curve_path = cfg.output_dir / f"{model_name}_loss_curve.png"

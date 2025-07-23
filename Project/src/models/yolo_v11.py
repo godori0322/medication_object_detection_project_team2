@@ -7,5 +7,6 @@ def yolo_v11(num_classes, pretrained=True):
         model_name = f'yolo11s.yaml'
 
     model = YOLO(model_name)
+    model.is_yolo = True
     
     return model
