@@ -1,10 +1,10 @@
 # src/main.py
-
-from src.dataloader import create_dataloaders
+from src.models import yolo_v5, faster_rcnn, ssd
 from src.train import train_model
-from src import models
+from src.test import run_test
 from src.config import get_config, get_device
-from src.utils import visualizer
+from src.utils.logger import save_metric_result
+from src.dataloader import create_dataloaders
 
 def main():
     # 현재 사용 중인 device 확인
@@ -15,16 +15,23 @@ def main():
     cfg = get_config()
 
     # 데이터로더 생성
-    train_loader, val_loader, test_loader = create_dataloaders()
+    train_loader, val_loader, test_loader, mappings = create_dataloaders(cfg)
+
+    # 모델 객체 생성(모델 변경을 위해 이 부분을 수정하세요)
+    model = yolo_v5(num_classes=cfg.num_classes, pretrained=True)
+    # model = yolo_v8(num_classes=cfg.num_classes, pretrained=True)
+    # model = yolo_v11(num_classes=cfg.num_classes, pretrained=True)
+    # model = faster_rcnn(num_classes=cfg.num_classes, backbone='resnet50', pretrained=True) # resnet18, resnet50, vgg16 중 선택 가능
     
-    # 모델 객체 생성
-    model = models.yolo_v5(num_classes=cfg.num_classes)
+    # 모델 학습(YOLO 모델일 때와 아닐 때 파이프라인 분리) & outputs 디렉토리에 결과 저장
+    trained_model = train_model(model, train_loader, val_loader, cfg)
     
-    # 모델 학습
-    trained_model, checkpoint_path = train_model(model, train_loader, val_loader, cfg)
-    
-    # 모델 결과 시각화
-    
+    # 모델 성능 평가(mAP@50)
+    # metrics = evaluate_map_50(trained_model, val_loader, cfg)
+    # save_metric_result(metrics, cfg.output_dir / "metrics.csv")
+
+    # test 데이터 기반으로 결과 예측
+    run_test(trained_model, test_loader, cfg)
 
     print("\n✅ 모든 과정이 완료되었습니다!")
 
@@ -32,4 +39,4 @@ if __name__ == "__main__":
     main()
 
 ## 실행 예시(CLI에서)
-## python src/main.py --num_epochs 30 --lr 0.0005 --batch_size 64
+## python src/main.py --model_type yolo --num_epochs 30 --lr 0.0005 --batch_size 64

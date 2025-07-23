@@ -8,6 +8,7 @@ env/
 # 파이썬 캐시 파일
 __pycache__/
 *.pyc
+*.cache
 
 # 데이터 및 결과물 (용량이 크므로)
 outputs/
