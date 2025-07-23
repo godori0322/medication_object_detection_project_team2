@@ -29,7 +29,7 @@ class PillDataset(Dataset):
         image_id = self.img_ids[idx]
         file_name = self.image_id_map.get(image_id)
         img_path = os.path.join(self.img_dir, file_name)
-        image_np = np.array(Image.open(img_path).convert('RGB'))
+        image_np = np.array(Image.open(img_path).convert('RGB'), dtype=np.uint8)
 
         # 해당 이미지의 모든 객체 라벨
         records = self.records_dict.get_group(image_id)

@@ -74,6 +74,25 @@ def validate_epoch(model, val_loader, device):
     
     return total_loss / len(val_loader)
 
+def validate_loss_epoch(model, val_loader, device):
+    model.train()  # loss 계산을 위해 train 모드
+    total_loss = 0
+
+    with torch.no_grad():
+        for images, targets in val_loader:
+            images = [img.to(device) for img in images]
+            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+            loss_dict = model(images, targets)  # loss 반환
+
+            losses = sum(
+                v.item() for v in loss_dict.values()
+                if torch.is_tensor(v) and v.dim() == 0
+            )
+            total_loss += losses
+
+    return total_loss / len(val_loader)
+
 def train_pytorch(model, train_loader, val_loader, cfg):
     """
     모델 학습 함수
@@ -148,7 +167,7 @@ def train_pytorch(model, train_loader, val_loader, cfg):
 
     for epoch in range(cfg.num_epochs):
         avg_train_loss = train_epoch(model, train_loader, optimizer, cfg.device, epoch, cfg.num_epochs)
-        avg_val_loss = validate_epoch(model, val_loader, cfg.device)
+        avg_val_loss = validate_loss_epoch(model, val_loader, cfg.device)
         
         train_losses.append(avg_train_loss)
         val_losses.append(avg_val_loss)

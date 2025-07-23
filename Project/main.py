@@ -4,7 +4,6 @@ from src.train import train_model
 from src.test import run_test
 from src.yolo_test import run_test_yolo
 from src.config import get_config, get_device
-from src.utils.evaluater import evaluate_map_50
 from src.utils.logger import save_metric_result
 from src.dataloader import create_dataloaders
 
@@ -21,8 +20,9 @@ def main():
 
     # 모델 객체 생성(모델 변경을 위해 이 부분을 수정하세요)
     model = yolo_v5(num_classes=cfg.num_classes, pretrained=True)
-    # model = faster_rcnn(num_classes=cfg.num_classes, pretrained=True)
-    # model = ssd(num_classes=cfg.num_classes, pretrained=True)
+    # model = yolo_v8(num_classes=cfg.num_classes, pretrained=True)
+    # model = yolo_v11(num_classes=cfg.num_classes, pretrained=True)
+    # model = faster_rcnn(num_classes=cfg.num_classes, backbone='resnet50', pretrained=True) # resnet18, resnet50, vgg16 중 선택 가능
     
     # 모델 학습(YOLO 모델일 때와 아닐 때 파이프라인 분리) & outputs 디렉토리에 결과 저장
     trained_model = train_model(model, train_loader, val_loader, cfg)
