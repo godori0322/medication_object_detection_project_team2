@@ -12,7 +12,7 @@ from ..utils.visualizer import save_loss_curve
 
 def validate_metrics_epoch(model, val_loader, device):
     model.eval()
-    metric = MeanAveragePrecision()
+    metric = MeanAveragePrecision(class_metrics=True)
     
     with torch.no_grad():
         for images, targets in val_loader:
@@ -166,7 +166,7 @@ def train_pytorch(model, train_loader, val_loader, cfg):
         val_losses.append(avg_val_loss)
         
         print(f"Epoch {epoch+1}: Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
-        print(f"mAP: {metrics['map']:.4f}, Precision: {metrics['precision']:.4f}, Recall: {metrics['recall']:.4f}")
+        print(f"mAP: {metrics['map']:.4f}, mAP@50: {metrics['map_50']:.4f}, mAP@75: {metrics['map_75']:.4f}")
 
         # 저장용 dict 생성
         metrics_log.append({
@@ -175,9 +175,7 @@ def train_pytorch(model, train_loader, val_loader, cfg):
             "val_loss": avg_val_loss,
             "map": metrics['map'].item(),
             "map_50": metrics['map_50'].item(),
-            "map_75": metrics['map_75'].item(),
-            "precision": metrics['precision'].item(),
-            "recall": metrics['recall'].item()
+            "map_75": metrics['map_75'].item() 
         })
 
         if avg_val_loss < best_val_loss:
