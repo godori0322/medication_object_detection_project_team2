@@ -1,43 +1,12 @@
 # src/train.py
 
 import torch
-from torch.utils.data import DataLoader, Subset
 from tqdm import tqdm
-import random
-from sklearn.model_selection import train_test_split
 from pathlib import Path
 
-from src.dataset import PillDataset
 from src.config import get_optimizer
-from .utils.logger import create_experiment_dir, Logger
-from .utils.visualizer import save_loss_curve
-
-def collate_fn(batch):
-    return tuple(zip(*batch))
-
-def create_dataloaders(config):
-    print("Loading data...")
-    full_dataset = PillDataset(config.train_image_dir, config.annotation_dir)
-    
-    print(f"Total dataset size: {len(full_dataset)}")
-    
-    # 데이터셋이 비어있는지 확인
-    if len(full_dataset) == 0:
-        raise ValueError(f"Dataset is empty! Check paths:\n"
-                        f"Image dir: {config.train_image_dir}\n"
-                        f"Annotation dir: {config.annotation_dir}")
-    
-    # 데이터 분할
-    indices = list(range(len(full_dataset)))
-    train_indices, val_indices = train_test_split(indices, test_size=0.1, random_state=42, shuffle=True)
-    train_dataset = Subset(full_dataset, train_indices)
-    val_dataset = Subset(full_dataset, val_indices)
-    
-    # 데이터로더 생성
-    train_loader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, collate_fn=collate_fn, num_workers=config.num_workers)
-    val_loader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=False, collate_fn=collate_fn, num_workers=config.num_workers)
-
-    return train_loader, val_loader
+from ..utils.logger import create_experiment_dir, Logger
+from ..utils.visualizer import save_loss_curve
 
 def train_epoch(model, train_loader, optimizer, device, epoch, num_epochs):
     model.train()
@@ -46,7 +15,7 @@ def train_epoch(model, train_loader, optimizer, device, epoch, num_epochs):
     
     for images, targets in train_loop:
         images = [img.to(device) for img in images]
-        targets = [t.to(device) for t in targets]
+        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
 
         loss_dict = model(images, targets)
         losses = sum(loss for loss in loss_dict.values())
@@ -76,7 +45,26 @@ def validate_epoch(model, val_loader, device):
     
     return total_loss / len(val_loader)
 
-def train_model(model, train_loader, val_loader, cfg):
+def validate_loss_epoch(model, val_loader, device):
+    model.train()  # loss 계산을 위해 train 모드
+    total_loss = 0
+
+    with torch.no_grad():
+        for images, targets in val_loader:
+            images = [img.to(device) for img in images]
+            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+            loss_dict = model(images, targets)  # loss 반환
+
+            losses = sum(
+                v.item() for v in loss_dict.values()
+                if torch.is_tensor(v) and v.dim() == 0
+            )
+            total_loss += losses
+
+    return total_loss / len(val_loader)
+
+def train_pytorch(model, train_loader, val_loader, cfg):
     """
     모델 학습 함수
     
@@ -94,10 +82,8 @@ def train_model(model, train_loader, val_loader, cfg):
     # cfg 객체의 output_dir 경로를 실험별 폴더로 교체
     cfg.output_dir = Path(experiment_dir)
 
-    # 체크포인트 경로도 새 경로로 수정
-    cfg.checkpoint_dir = cfg.output_dir / "checkpoints"
-    cfg.checkpoint_dir.mkdir(parents=True, exist_ok=True)
-    checkpoint_path = cfg.checkpoint_dir / f"{model.__class__.__name__}_best.pth"
+    # best model state dict 저장하는 checkpoint_path 설정
+    checkpoint_path = cfg.output_dir / f"{model.__class__.__name__}_best.pth"
 
     # 실험 결과 저장용 디렉토리에 config의 하이퍼 파라미터 정보 csv 파일로 저장
     num_train_images = len(train_loader.dataset)
@@ -146,9 +132,13 @@ def train_model(model, train_loader, val_loader, cfg):
     val_losses = []
     best_val_loss = float('inf')
 
+    # GPU 메모리 초기화
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
     for epoch in range(cfg.num_epochs):
         avg_train_loss = train_epoch(model, train_loader, optimizer, cfg.device, epoch, cfg.num_epochs)
-        avg_val_loss = validate_epoch(model, val_loader, cfg.device)
+        avg_val_loss = validate_loss_epoch(model, val_loader, cfg.device)
         
         train_losses.append(avg_train_loss)
         val_losses.append(avg_val_loss)
@@ -168,4 +158,4 @@ def train_model(model, train_loader, val_loader, cfg):
     logger.save_loss_history_csv(train_losses, val_losses)
 
     print(f"{model_name.upper()} 모델 학습 완료")
-    return model, checkpoint_path
+    return model

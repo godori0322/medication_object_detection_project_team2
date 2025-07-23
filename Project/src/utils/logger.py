@@ -12,6 +12,13 @@ def create_experiment_dir(base_dir: str, experiment_name: str) -> str:
     os.makedirs(exp_dir, exist_ok=True)
     return exp_dir
 
+def save_metric_result(metric_dict, save_path):
+        with open(save_path, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Metric", "Value"])
+            for k, v in metric_dict.items():
+                writer.writerow([k, v])
+
 class Logger:
     def __init__(self, save_dir: Path):
         self.save_dir = Path(save_dir)
@@ -50,3 +57,4 @@ class Logger:
             for epoch, (tr_loss, val_loss) in enumerate(zip(train_losses, val_losses), 1):
                 writer.writerow([epoch, tr_loss, val_loss])
         print(f"Loss history saved to: {save_path}")
+
