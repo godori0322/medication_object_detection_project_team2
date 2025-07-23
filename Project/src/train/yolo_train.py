@@ -5,13 +5,6 @@ from ultralytics import YOLO
 def train_yolo(model, cfg):
     # data.yaml 경로 설정
     data_yaml = cfg.data_dir / "data.yaml"
-
-    # optimizer 설정
-    opt = ""
-    if cfg.optimizer == "adam" or cfg.optimizer == "adamw":
-        opt = "adam"
-    elif cfg.optimizer == "sgd":
-        opt = "sgd"
     
     # 학습 실행
     model.train(
@@ -20,9 +13,9 @@ def train_yolo(model, cfg):
         imgsz=640,
         device=cfg.device,
         batch=cfg.batch_size,
-        optimizer=opt,
         lr0=cfg.lr,
         lrf=0.01,
+        optimizer=cfg.optimizer, # SGD, Adam, AdamW, NAdam, RAdam, RMSProp
         momentum=cfg.momentum,
         weight_decay=cfg.weight_decay,
         flipud=0.1,
