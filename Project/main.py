@@ -3,7 +3,6 @@ from src.models import yolo_v5, faster_rcnn, ssd
 from src.train import train_model
 from src.test import run_test
 from src.config import get_config, get_device
-from src.utils.evaluater import evaluate_map_50
 from src.utils.logger import save_metric_result
 from src.dataloader import create_dataloaders
 
