@@ -10,7 +10,7 @@ import csv
 
 def run_test(trained_model, test_loader, cfg):
     # YOLO 모델은 자체 평가 루틴(val())을 사용하므로 여기서 평가하지 않음
-    if hasattr(trained_model, 'is_yolo') and trained_model.is_yolo:
+    if getattr(trained_model, 'is_yolo', False):
         print("[i] YOLO 모델은 run_test를 건너뜁니다(자체 평가 루틴 사용).")
         return
     result_dir = Path(cfg.output_dir) / "test"
