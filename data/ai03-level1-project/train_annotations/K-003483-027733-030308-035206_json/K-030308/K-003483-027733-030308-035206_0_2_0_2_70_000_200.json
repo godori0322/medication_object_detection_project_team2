@@ -50,7 +50,7 @@
             "mark_code_front": "",
             "mark_code_back": "",
             "change_date": "20210322",
-            "id": 1245
+            "id": 1244
         }
     ],
     "type": "instances",
@@ -68,7 +68,7 @@
             "ignore": 0,
             "segmentation": [],
             "id": 4742,
-            "image_id": 1245
+            "image_id": 1244
         }
     ],
     "categories": [
