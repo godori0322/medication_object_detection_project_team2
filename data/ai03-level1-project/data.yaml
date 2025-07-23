@@ -3,7 +3,7 @@ path: ../data/ai03-level1-project
 train: images/train
 val: images/val
 
-nc: 73
+nc: 74
 names: [
   "보령부스파정 5mg",
   "뮤테란캡슐 100mg",
@@ -78,4 +78,5 @@ names: [
   "로수바미브정 10/20mg",
   "카발린캡슐 25mg",
   "케이캡정 50mg",
+  "넥시움정 40mg",
 ]
