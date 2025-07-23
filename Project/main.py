@@ -2,6 +2,7 @@
 from src.models import yolo_v5, faster_rcnn, ssd
 from src.train import train_model
 from src.test import run_test
+from src.yolo_test import run_test_yolo
 from src.config import get_config, get_device
 from src.utils.logger import save_metric_result
 from src.dataloader import create_dataloaders
@@ -25,9 +26,23 @@ def main():
     
     # 모델 학습(YOLO 모델일 때와 아닐 때 파이프라인 분리) & outputs 디렉토리에 결과 저장
     trained_model = train_model(model, train_loader, val_loader, cfg)
+<<<<<<< HEAD
+=======
+    
+    model_name = trained_model.__class__.__name__.lower()
+    # YOLO 모델은 ultralytics 라이브러리로 성능평가 및 시각화까지
+    if model_name == "yolo":
+        run_test_yolo(trained_model, cfg)
+>>>>>>> feature/arc
 
-    # test 데이터 기반으로 결과 예측
-    run_test(trained_model, test_loader, cfg)
+    # 다른 모델은 직접 예측 결과를 저장하는 방식으로 진행
+    else:
+        # test 데이터 기반으로 결과 예측
+        run_test(trained_model, test_loader, cfg)
+
+        # 모델 성능 평가(mAP@50)
+        # metrics = evaluate_map_50(trained_model, val_loader, cfg)
+        # save_metric_result(metrics, cfg.output_dir / "metrics.csv")
 
     print("\n✅ 모든 과정이 완료되었습니다!")
 
