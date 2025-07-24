@@ -5,7 +5,7 @@ import csv
 import yaml
 import json
 
-def create_submission_csv(results, output_csv_path, class_names, name_to_id_map):
+def create_submission_csv(results, output_csv_path, class_names, name_to_id_map, cfg):
     annotation_id = 1
     submission_rows = []
 
@@ -58,7 +58,7 @@ def run_test_yolo(model, cfg):
     class_names = data_config['names']
     
     # 매핑 정보 로드 및 역매핑 생성
-    mappings_path = "Project/data_csv/mappings.json"
+    mappings_path = cfg.base_dir / "Project" / "data_csv" / "mappings.json"
     with open(mappings_path, 'r', encoding='utf-8') as f:
         mappings = json.load(f)
     
@@ -78,4 +78,4 @@ def run_test_yolo(model, cfg):
 
     # submission.csv 생성
     output_csv_path = os.path.join(save_dir, 'submission.csv')
-    create_submission_csv(results, output_csv_path, class_names, name_to_id_map)
+    create_submission_csv(results, output_csv_path, class_names, name_to_id_map, cfg)
