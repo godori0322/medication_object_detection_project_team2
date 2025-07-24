@@ -12,7 +12,7 @@ from ..utils.visualizer import save_loss_curve
 
 def validate_metrics_epoch(model, val_loader, device):
     model.eval()
-    metric = MeanAveragePrecision(class_metrics=True)
+    metric = MeanAveragePrecision(class_metrics=True, max_detection_thresholds=[4, 10])
     
     with torch.no_grad():
         for images, targets in val_loader:
@@ -170,18 +170,15 @@ def train_pytorch(model, train_loader, val_loader, cfg):
         train_losses.append(avg_train_loss)
         val_losses.append(avg_val_loss)
         
-        # 현재 learning rate 로그 출력
+        # 현재 learning rate 로그 출력(mAP 제외)
         current_lr = optimizer.param_groups[0]['lr']
         print(f"Epoch {epoch+1}/{cfg.num_epochs} | LR: {current_lr:.6f} | Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
-        print(f"mAP: {metrics['map']:.4f}, mAP@50: {metrics['map_50']:.4f}, mAP@75: {metrics['map_75']:.4f}")
 
         # 저장용 dict 생성
         metrics_log.append({
             "epoch": epoch + 1,
             "train_loss": avg_train_loss,
-            "val_loss": avg_val_loss,
-            "map": metrics['map'].item(),
-            "map_50": metrics['map_50'].item()
+            "val_loss": avg_val_loss
         })
 
         # best model 저장
@@ -209,6 +206,25 @@ def train_pytorch(model, train_loader, val_loader, cfg):
     
     # 손실 저장
     logger.save_loss_history_csv(train_losses, val_losses)
+
+    # Best 모델 mAP/mAR 계산
+    print("[✓] Best 모델 성능 평가 중...")
+    best_model = model
+    best_model.load_state_dict(torch.load(checkpoint_path, map_location=cfg.device))
+    best_model = best_model.to(cfg.device)
+    best_metrics = validate_metrics_epoch(best_model, val_loader, cfg.device)
+
+    # CSV로 저장
+    best_metrics_dict = {
+        "mAP": best_metrics["map"].item(),
+        "mAP@50": best_metrics["map_50"].item(),
+        "mAR@4": best_metrics["mar_4"].item(),
+        "mAR@10": best_metrics["mar_10"].item()
+    }
+    best_metrics_df = pd.DataFrame([best_metrics_dict])
+    best_metrics_csv_path = cfg.output_dir / f"{model_name}_best_PR.csv"
+    best_metrics_df.to_csv(best_metrics_csv_path, index=False)
+    print(f"[✓] Best 모델 성능(mAP/mAR) 저장 완료: {best_metrics_csv_path}")
 
     print(f"{model_name.upper()} 모델 학습 완료")
     return model
