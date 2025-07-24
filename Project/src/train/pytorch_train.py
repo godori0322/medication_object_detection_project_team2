@@ -192,7 +192,7 @@ def train_pytorch(model, train_loader, val_loader, cfg):
 
         # 스케줄러 step
         if scheduler:
-            if cfg.scheduler == 'ReduceLROnPlateau':
+            if cfg.lr_scheduler == 'ReduceLROnPlateau':
                 scheduler.step(avg_val_loss)
             else:
                 scheduler.step()
