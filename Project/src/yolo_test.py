@@ -2,8 +2,10 @@
 
 import os
 import csv
+import yaml
+import json
 
-def create_submission_csv(results, output_csv_path):
+def create_submission_csv(results, output_csv_path, class_names, name_to_id_map):
     annotation_id = 1
     submission_rows = []
 
