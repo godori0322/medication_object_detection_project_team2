@@ -14,7 +14,7 @@ def train_yolo(model, cfg):
         device=cfg.device,
         batch=cfg.batch_size,
         lr0=cfg.lr,
-        lrf=0.01,
+        lrf=cfg.lrf,
         optimizer=cfg.optimizer, # SGD, Adam, AdamW, NAdam, RAdam, RMSProp
         momentum=cfg.momentum,
         weight_decay=cfg.weight_decay,
