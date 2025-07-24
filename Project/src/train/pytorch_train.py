@@ -6,7 +6,7 @@ from tqdm import tqdm
 from pathlib import Path
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 
-from src.config import get_optimizer
+from src.config import get_optimizer, get_lr_scheduler
 from ..utils.logger import create_experiment_dir, Logger
 from ..utils.visualizer import save_loss_curve
 
@@ -115,6 +115,8 @@ def train_pytorch(model, train_loader, val_loader, cfg):
         "num_classes": cfg.num_classes, 
         "batch_size": cfg.batch_size,
         "lr": cfg.lr,
+        "lrf": cfg.lrf,
+        "lr_scheduler": cfg.lr_scheduler,
         "optimizer": cfg.optimizer,
         "num_workers": cfg.num_workers, 
         "weight_decay": cfg.weight_decay,
@@ -125,6 +127,9 @@ def train_pytorch(model, train_loader, val_loader, cfg):
 
     # 옵티마이저 생성
     optimizer = get_optimizer(model, cfg)
+
+    # 학습률 스케줄러 생성
+    scheduler = get_lr_scheduler(optimizer, cfg)
 
     model_name = model.__class__.__name__
     optimizer_type = type(optimizer).__name__
@@ -165,7 +170,9 @@ def train_pytorch(model, train_loader, val_loader, cfg):
         train_losses.append(avg_train_loss)
         val_losses.append(avg_val_loss)
         
-        print(f"Epoch {epoch+1}: Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
+        # 현재 learning rate 로그 출력
+        current_lr = optimizer.param_groups[0]['lr']
+        print(f"Epoch {epoch+1}/{cfg.num_epochs} | LR: {current_lr:.6f} | Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
         print(f"mAP: {metrics['map']:.4f}, mAP@50: {metrics['map_50']:.4f}, mAP@75: {metrics['map_75']:.4f}")
 
         # 저장용 dict 생성
@@ -174,14 +181,21 @@ def train_pytorch(model, train_loader, val_loader, cfg):
             "train_loss": avg_train_loss,
             "val_loss": avg_val_loss,
             "map": metrics['map'].item(),
-            "map_50": metrics['map_50'].item(),
-            "map_75": metrics['map_75'].item() 
+            "map_50": metrics['map_50'].item()
         })
 
+        # best model 저장
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
             torch.save(model.state_dict(), checkpoint_path)
             print(f"모델저장. validation loss: {best_val_loss:.4f}")
+
+        # 스케줄러 step
+        if scheduler:
+            if cfg.scheduler == 'ReduceLROnPlateau':
+                scheduler.step(avg_val_loss)
+            else:
+                scheduler.step()
 
     # 성능 기록 CSV로 저장
     metrics_df = pd.DataFrame(metrics_log)

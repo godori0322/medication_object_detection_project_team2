@@ -65,6 +65,17 @@ def get_optimizer(model, cfg):
     else:
         raise ValueError(f"Unsupported optimizer: {cfg.optimizer}")
 
+# config에서 learning rate scheduler 관리하여 실험 용이하게
+def get_lr_scheduler(optimizer, cfg):
+    if cfg.lr_scheduler == "StepLR":
+        return optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    elif cfg.lr_scheduler == "CosineAnnealingLR":
+        return optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10, eta_min=0)
+    elif cfg.lr_scheduler == "ReduceLROnPlateau":
+        return optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
+    else:
+        raise ValueError(f"Unsupported learning rate scheduler: {cfg.lr_scheduler}")
+
 # argparse를 이용한 유동적인 하이퍼파라미터 조정
 def get_config():
     if any(env in sys.modules for env in ['google.colab', 'ipykernel']):
@@ -79,7 +90,9 @@ def get_config():
     parser.add_argument('--num_classes', type=int, default=44199, help='Number of classes')
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size for training')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
-    parser.add_argument('--optimizer', type=str, default='Adam', help='Optimzer') # SGD, Adam, AdamW, NAdam, RAdam, RMSProp
+    parser.add_argument('--lrf', type=float, default=0.01, help='Final learning rate (for YOLO)')
+    parser.add_argument('--lr_scheduler', type=str, default='StepLR', help='Learning rate scheduler (StepLR, CosineAnnealingLR, ReduceLROnPlateau)')
+    parser.add_argument('--optimizer', type=str, default='Adam', help='Optimzer (Adam, AdamW, SGD)') # SGD, Adam, AdamW, NAdam, RAdam, RMSProp
     parser.add_argument('--num_workers', type=int, default=0, help='Number of workers')
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='Weight decay')
     parser.add_argument('--confidence_threshold', type=float, default=0.5, help='Confidence threshold')
