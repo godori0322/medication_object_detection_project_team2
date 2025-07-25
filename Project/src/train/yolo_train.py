@@ -30,11 +30,8 @@ def train_yolo(model, cfg):
             device=cfg.device,
             batch=cfg.batch_size,
             iterations=cfg.iterations, 
-            autoanchor=cfg.autoanchor,
             project=str(cfg.output_dir),
-            name="yolo_tune",
-            **loss_kwargs,
-            **custom_augmentation
+            name="yolo_tune"
         )
         
         tune_root = Path(cfg.output_dir)
@@ -112,11 +109,9 @@ def train_yolo(model, cfg):
             optimizer=cfg.optimizer, # SGD, Adam, AdamW, NAdam, RAdam, RMSProp
             momentum=cfg.momentum,
             weight_decay=cfg.weight_decay,
-            autoanchor=cfg.autoanchor,
             project=str(cfg.output_dir),
             name=f"yolo_experiment",
             patience=20,
-            **loss_kwargs,
             **custom_augmentation
             )
         

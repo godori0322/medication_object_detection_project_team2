@@ -104,7 +104,7 @@ def get_config():
     parser.add_argument("--fl_alpha", type=float, default=0.25, help="Focal α")
 
     parser.add_argument("--tune", action="store_true", help="use tune hyperparameter search")
-    parser.add_argument("--iterations", type=int, default=100, help="Number of hyperparameter combinations to try during tune")
+    parser.add_argument("--iterations", type=int, default=10, help="Number of hyperparameter combinations to try during tune")
     parser.add_argument('--tune_epochs', type=int, default=30, help='Number of tune epochs')
 
     parser.add_argument("--hyp_path", type=str, default=None, help="Path to a custom hyperparameters YAML file for training")
