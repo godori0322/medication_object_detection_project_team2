@@ -1,4 +1,4 @@
-path: ../data/ai03-level1-project
+# path: ../data/ai03-level1-project
 
 train: images/train
 val: images/val
