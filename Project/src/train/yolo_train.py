@@ -20,6 +20,7 @@ def train_yolo(model, cfg):
             imgsz=640,
             device=cfg.device,
             batch=cfg.batch_size,
+            optimizer=cfg.optimizer,
             iterations=cfg.iterations, 
             project=str(cfg.output_dir),
             name="yolo_tune"
@@ -50,6 +51,7 @@ def train_yolo(model, cfg):
             imgsz=640,
             device=cfg.device,
             batch=cfg.batch_size,
+            optimizer=cfg.optimizer,
             project=str(cfg.output_dir),
             name="yolo_experiment",  
             patience=20,
@@ -76,6 +78,7 @@ def train_yolo(model, cfg):
             imgsz=640,
             device=cfg.device,
             batch=cfg.batch_size,
+            optimizer=cfg.optimizer,
             project=str(cfg.output_dir),
             name="yolo_experiment",
             patience=20,
