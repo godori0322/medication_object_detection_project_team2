@@ -13,7 +13,7 @@ def train_yolo(model, cfg):
     
     # 학습 실행
     if getattr(cfg, 'tune', False):
-        # 하이퍼파라미터 진화(evolutionary search)
+        # 하이퍼파라미터 최적값 탐색(tune search)
         model.tune(
             data=str(data_yaml),
             epochs=cfg.tune_epochs,
@@ -21,6 +21,7 @@ def train_yolo(model, cfg):
             device=cfg.device,
             batch=cfg.batch_size,
             iterations=cfg.iterations, 
+            autoanchor=cfg.autoanchor,
             project=str(cfg.output_dir),
             name="yolo_tune"
         )
@@ -50,13 +51,43 @@ def train_yolo(model, cfg):
             imgsz=640,
             device=cfg.device,
             batch=cfg.batch_size,
+            autoanchor=cfg.autoanchor,
             project=str(cfg.output_dir),
             name="yolo_experiment",  
             patience=20,
             **hyp_dict,
             **custom_augmentation
         )
+        
+    elif cfg.hyp_path:
+        # 하이퍼파라미터 파일로 전송
+        hyp_file = Path(cfg.hyp_path)
+        if not hyp_file.exists():
+            raise FileNotFoundError(f"하이퍼파라미터 파일을 찾을 수 없습니다: {hyp_file}")
+        with open(hyp_file, 'r', encoding='utf-8') as f:
+            hyp_dict = yaml.safe_load(f)
+
+        # 겹치는 증강 파라미터는 제거
+        for k in list(custom_augmentation):
+            if k in hyp_dict:
+                custom_augmentation.pop(k)
+
+        model.train(
+            data=str(data_yaml),
+            epochs=cfg.final_epochs,
+            imgsz=640,
+            device=cfg.device,
+            batch=cfg.batch_size,
+            autoanchor=cfg.autoanchor,
+            project=str(cfg.output_dir),
+            name="yolo_from_hyp",
+            patience=20,
+            **hyp_dict,
+            **custom_augmentation
+        )
+
     else:
+        # 기본 학습
         model.train(
             data=str(data_yaml),
             epochs=cfg.num_epochs,
@@ -68,6 +99,7 @@ def train_yolo(model, cfg):
             optimizer=cfg.optimizer, # SGD, Adam, AdamW, NAdam, RAdam, RMSProp
             momentum=cfg.momentum,
             weight_decay=cfg.weight_decay,
+            autoanchor=cfg.autoanchor,
             project=str(cfg.output_dir),
             name=f"yolo_experiment",
             patience=20,

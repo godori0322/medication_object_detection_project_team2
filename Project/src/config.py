@@ -97,10 +97,13 @@ def get_config():
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='Weight decay')
     parser.add_argument('--confidence_threshold', type=float, default=0.5, help='Confidence threshold')
     parser.add_argument('--momentum', type=float, default=0.9, help='Momentum')
+    parser.add_argument("--autoanchor", action="store_true", default=False, help="Enable dataset‑specific anchor box recalculation")
 
     parser.add_argument("--tune", action="store_true", help="use tune hyperparameter search")
     parser.add_argument("--iterations", type=int, default=100, help="Number of hyperparameter combinations to try during tune")
     parser.add_argument('--tune_epochs', type=int, default=30, help='Number of tune epochs')
+
+    parser.add_argument("--hyp_path", type=str, default=None, help="Path to a custom hyperparameters YAML file for training")
 
     args = parser.parse_args()
     
