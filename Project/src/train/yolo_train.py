@@ -8,9 +8,15 @@ def train_yolo(model, cfg):
     data_yaml = cfg.data_dir / "data.yaml"
     
     custom_augmentation = get_default_augmentation()
-    custom_augmentation['flipud'] = 0.1
-    custom_augmentation['auto_augment'] = "randaugment"
-    
+    custom_augmentation["hsv_h"] = 0
+    custom_augmentation["hsv_s"] = 0
+    custom_augmentation["hsv_v"] = 0
+    custom_augmentation["translate"] = 0
+    custom_augmentation["scale"] = 0
+    custom_augmentation["fliplr"] = 0
+    custom_augmentation["mosaic"] = 0
+    custom_augmentation["erasing"] = 0
+
     # 학습 실행
     if getattr(cfg, 'tune', False):
         # 하이퍼파라미터 최적값 탐색(tune search)
@@ -103,7 +109,7 @@ def train_yolo(model, cfg):
             name=f"yolo_experiment",
             patience=20,
             **custom_augmentation
-            )
+        )
         
     print(f"YOLO 학습 완료")
     return model
