@@ -47,4 +47,4 @@ if __name__ == "__main__":
     main()
 
 ## 실행 예시(CLI에서)
-## python src/main.py --model_type yolo --num_epochs 30 --lr 0.0005 --batch_size 64
+## python Project/main.py --hyp_path 파일경로/best_hyperparameters.yaml
