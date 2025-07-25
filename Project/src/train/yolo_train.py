@@ -11,6 +11,15 @@ def train_yolo(model, cfg):
     custom_augmentation['flipud'] = 0.1
     custom_augmentation['auto_augment'] = "randaugment"
     
+    # 공통으로 넘겨줄 loss 관련 파라미터 준비
+    loss_kwargs = {}
+    if cfg.loss == "focal":
+        loss_kwargs = {
+            "loss":     "focal",
+            "fl_gamma": cfg.fl_gamma,
+            "fl_alpha": cfg.fl_alpha
+            }
+    
     # 학습 실행
     if getattr(cfg, 'tune', False):
         # 하이퍼파라미터 최적값 탐색(tune search)
@@ -23,7 +32,9 @@ def train_yolo(model, cfg):
             iterations=cfg.iterations, 
             autoanchor=cfg.autoanchor,
             project=str(cfg.output_dir),
-            name="yolo_tune"
+            name="yolo_tune",
+            **loss_kwargs,
+            **custom_augmentation
         )
         
         tune_root = Path(cfg.output_dir)
@@ -55,6 +66,7 @@ def train_yolo(model, cfg):
             project=str(cfg.output_dir),
             name="yolo_experiment",  
             patience=20,
+            **loss_kwargs,
             **hyp_dict,
             **custom_augmentation
         )
@@ -82,6 +94,7 @@ def train_yolo(model, cfg):
             project=str(cfg.output_dir),
             name="yolo_from_hyp",
             patience=20,
+            **loss_kwargs,
             **hyp_dict,
             **custom_augmentation
         )
@@ -103,6 +116,7 @@ def train_yolo(model, cfg):
             project=str(cfg.output_dir),
             name=f"yolo_experiment",
             patience=20,
+            **loss_kwargs,
             **custom_augmentation
             )
         
