@@ -1,5 +1,5 @@
 # YOLOv11 기본 low‑augmentation 하이퍼파라미터
-lr0: 0.01          # 초기 학습률 (SGD=1e‑2, Adam=1e‑3)
+lr0: 0.001         # 초기 학습률 (SGD=1e‑2, Adam=1e‑3)
 lrf: 0.01          # 최종 OneCycleLR 학습률 비율 (lr0 * lrf)
 momentum: 0.937    # SGD momentum / Adam beta1
 weight_decay: 0.0005  # weight decay
