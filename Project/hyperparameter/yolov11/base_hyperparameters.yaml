@@ -1,0 +1,26 @@
+# YOLOv11 기본 low‑augmentation 하이퍼파라미터
+lr0: 0.01          # 초기 학습률 (SGD=1e‑2, Adam=1e‑3)
+lrf: 0.01          # 최종 OneCycleLR 학습률 비율 (lr0 * lrf)
+momentum: 0.937    # SGD momentum / Adam beta1
+weight_decay: 0.0005  # weight decay
+warmup_epochs: 3.0    # 워밍업 epoch 수 (소수 가능)
+warmup_momentum: 0.8  # 워밍업 초기 momentum
+warmup_bias_lr: 0.1   # 워밍업 초기 bias lr
+box: 0.05         # box loss gain
+cls: 0.5          # cls loss gain
+dfl: 0.0          # cls loss gain
+hsv_h: 0.015      # HSV-Hue 증강 강도
+hsv_s: 0.7        # HSV-Saturation 증강 강도
+hsv_v: 0.4        # HSV-Value 증강 강도
+degrees: 0.0      # 랜덤 회전(deg)
+translate: 0.1    # 랜덤 평행 이동(비율)
+scale: 0.5        # 랜덤 스케일 변환(비율)
+shear: 0.0        # 랜덤 전단(deg)
+perspective: 0.0  # 랜덤 원근 변환(비율)
+flipud: 0.0       # 수직 뒤집기 확률
+fliplr: 0.5       # 수평 뒤집기 확률
+bgr: 0.0          #
+mosaic: 0.5       # Mosaic 확률 (v11 기본은 0.5)
+mixup: 0.2        # MixUp 확률 (v11 기본은 0.2)
+cutmix: 0.0       #
+copy_paste: 0.2   # CopyPaste 증강 확률 (v11 전용)
