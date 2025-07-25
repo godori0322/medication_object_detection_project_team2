@@ -52,7 +52,7 @@ def train_yolo(model, cfg):
             batch=cfg.batch_size,
             project=str(cfg.output_dir),
             name="yolo_experiment",  
-            patience=50,
+            patience=20,
             **hyp_dict,
             **custom_augmentation
         )
