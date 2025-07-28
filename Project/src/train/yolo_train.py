@@ -137,3 +137,4 @@ def get_default_augmentation():
         "auto_augment": None,       # randaugment, autoaugment 또는 augmix
         "erasing": 0.4,             # 0.0 - 0.9
     }
+

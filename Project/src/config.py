@@ -92,7 +92,7 @@ def get_config():
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
     parser.add_argument('--lrf', type=float, default=0.01, help='Final learning rate (for YOLO)')
     parser.add_argument('--lr_scheduler', type=str, default='StepLR', help='Learning rate scheduler (StepLR, CosineAnnealingLR, ReduceLROnPlateau)')
-    parser.add_argument('--optimizer', type=str, default='AdamW', help='Optimzer (Adam, AdamW, SGD)') # SGD, Adam, AdamW, NAdam, RAdam, RMSProp
+    parser.add_argument('--optimizer', type=str, default='SGD', help='Optimzer (Adam, AdamW, SGD)') # SGD, Adam, AdamW, NAdam, RAdam, RMSProp
     parser.add_argument('--num_workers', type=int, default=0, help='Number of workers')
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='Weight decay')
     parser.add_argument('--confidence_threshold', type=float, default=0.5, help='Confidence threshold')
