@@ -29,7 +29,8 @@ def train_yolo(model, cfg):
             optimizer=cfg.optimizer,
             iterations=cfg.iterations, 
             project=str(cfg.output_dir),
-            name="yolo_tune"
+            name="yolo_tune",
+            **custom_augmentation
         )
         
         tune_root = Path(cfg.output_dir)
