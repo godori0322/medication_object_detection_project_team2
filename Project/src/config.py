@@ -86,13 +86,13 @@ def get_config():
     default_device = get_device()
 
     parser.add_argument('--device', type=str, default=default_device, help='Device to use (cuda, mps or cpu)')
-    parser.add_argument('--num_epochs', type=int, default=100, help='Number of training epochs')
+    parser.add_argument('--num_epochs', type=int, default=300, help='Number of training epochs')
     parser.add_argument('--num_classes', type=int, default=44199, help='Number of classes')
-    parser.add_argument('--batch_size', type=int, default=16, help='Batch size for training')
+    parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
     parser.add_argument('--lrf', type=float, default=0.01, help='Final learning rate (for YOLO)')
     parser.add_argument('--lr_scheduler', type=str, default='StepLR', help='Learning rate scheduler (StepLR, CosineAnnealingLR, ReduceLROnPlateau)')
-    parser.add_argument('--optimizer', type=str, default='SGD', help='Optimzer (Adam, AdamW, SGD)') # SGD, Adam, AdamW, NAdam, RAdam, RMSProp
+    parser.add_argument('--optimizer', type=str, default='AdamW', help='Optimzer (Adam, AdamW, SGD)') # SGD, Adam, AdamW, NAdam, RAdam, RMSProp
     parser.add_argument('--num_workers', type=int, default=0, help='Number of workers')
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='Weight decay')
     parser.add_argument('--confidence_threshold', type=float, default=0.5, help='Confidence threshold')

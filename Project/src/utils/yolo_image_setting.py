@@ -105,7 +105,7 @@ def augumentation():
 
     ann_label_temp = {}
     for ann_file in annotation_dir.glob("**/*.json"):
-        with open(ann_file, "r") as f:
+        with open(ann_file, "r", encoding="utf-8-sig") as f:
             ann = json.load(f)
             key = (ann["images"][0]["drug_N"]).split("-")[1]
 
