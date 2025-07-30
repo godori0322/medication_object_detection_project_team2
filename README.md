@@ -20,12 +20,13 @@
 
 ## 프로젝트 세팅
 1. 제공된 학습 데이터를 [다운](https://www.kaggle.com/competitions/ai03-level1-project/data)받아 `data/ai03-level1-project` 폴더 하위에 압축 풀기
+
+    완성 경로
     ```
-    완성 경로:
     data/ai03-level1-project/train_images/*.png
     data/ai03-level1-project/test_images/*.png
     ```
-2. YOLO 학습 전처리 데이터로 변환
+2. YOLO 데이터 구조 변환
     - python
         ```
         python Project/src/utils/yolo_image_setting.py
