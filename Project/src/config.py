@@ -86,9 +86,9 @@ def get_config():
     default_device = get_device()
 
     parser.add_argument('--device', type=str, default=default_device, help='Device to use (cuda, mps or cpu)')
-    parser.add_argument('--num_epochs', type=int, default=500, help='Number of training epochs')
+    parser.add_argument('--num_epochs', type=int, default=1000, help='Number of training epochs')
     parser.add_argument('--num_classes', type=int, default=44199, help='Number of classes')
-    parser.add_argument('--batch_size', type=int, default=64, help='Batch size for training')
+    parser.add_argument('--batch_size', type=int, default=16, help='Batch size for training')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
     parser.add_argument('--lrf', type=float, default=0.01, help='Final learning rate (for YOLO)')
     parser.add_argument('--lr_scheduler', type=str, default='StepLR', help='Learning rate scheduler (StepLR, CosineAnnealingLR, ReduceLROnPlateau)')
@@ -99,8 +99,8 @@ def get_config():
     parser.add_argument('--momentum', type=float, default=0.9, help='Momentum')
 
     parser.add_argument("--tune", action="store_true", help="use tune hyperparameter search")
-    parser.add_argument("--iterations", type=int, default=50, help="Number of hyperparameter combinations to try during tune")
-    parser.add_argument('--tune_epochs', type=int, default=5, help='Number of tune epochs')
+    parser.add_argument("--iterations", type=int, default=100, help="Number of hyperparameter combinations to try during tune")
+    parser.add_argument('--tune_epochs', type=int, default=10, help='Number of tune epochs')
 
     parser.add_argument("--hyp_path", type=str, default=None, help="Path to a custom hyperparameters YAML file for training")
 

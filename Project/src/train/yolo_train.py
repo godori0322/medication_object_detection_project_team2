@@ -80,11 +80,11 @@ def train_yolo(model: YOLO, cfg) -> YOLO:
         "project":          str(out_dir),      # 프로젝트 디렉터리
         "name":             "yolo_experiment", # 실험 이름
         # 증강
-        "augment":          True,              # 증강 사용여부
-        "auto_augment":     "auto_augment",    # 증강 최적화
-        "copy_paste_mode":  "mixup",           # mixup 모드
+        # "augment":          True,              # 증강 사용여부
+        # "auto_augment":     "auto_augment",    # 증강 최적화
+        # "copy_paste_mode":  "mixup",           # mixup 모드
         # 기타
-        "close_mosaic":     20,                # mosaic 종료 epoch
+        # "close_mosaic":     20,                # mosaic 종료 epoch
         **hyperparams,                         # 튜닝/파일/기본 파라미터
     }
 
