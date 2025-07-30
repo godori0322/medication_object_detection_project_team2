@@ -1,5 +1,8 @@
 # CapsuleNet(2팀)
 
+## 최종 보고서 링크
+- https://github.com/godori0322/medication_object_detection_project_team2/blob/main/CapsuleNet%20%EB%B3%B4%EA%B3%A0%EC%84%9C.pdf
+
 ## 협업일지 링크
 - [고인범](https://www.notion.so/_-23fbc32ff87180ddb1c0ea8614c7bbb9?source=copy_link)
 
