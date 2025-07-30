@@ -13,34 +13,60 @@ project/
 
 ├── src/                   # 주요 소스코드
 
-│   └── main.py            # CLI에서 one line command로 main 호출 시 데이터 전처리, 모델 학습 및 결과 저장까지 일괄 처리되도록 설계
+└── utils/
 
-│   └── models/
+<span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>├── config.py
 
-│       ├── yolo_v5.py
+<span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>├── dataset.py
 
-│       ├── yolo_v8.py
+<span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>├── dataloader.py
 
-│       ├── yolo_v11.py
+<span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>├── test.py
 
-│       ├── faster_rcnn.py
+<span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>└── yolo_test.py
 
-│       └── ssd.py
+└── models/
 
-│   └── train/
+<span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>├── yolo_v5.py
 
-│       ├── pytorch_train.py
+<span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>├── yolo_v8.py
 
-│       └── yolo_train.py
+<span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>├── yolo_v11.py
 
-│   └── utils/
+<span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>├── faster_rcnn.py
 
-│   └── config.py
+<span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>└── ssd.py
 
-│   └── dataset.py
+└── train/
 
-│   └── dataloader.py
+<span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>├── pytorch_train.py
 
-│   └── test.py
+<span>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span>└── yolo_train.py
 
-│   └── yolo_test.py
+
+
+└── main.py            # CLI에서 one line command로 main 호출 시 데이터 전처리, 모델 학습 및 결과 저장까지 일괄 처리되도록 설계
