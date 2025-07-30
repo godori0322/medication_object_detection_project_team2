@@ -12,17 +12,29 @@
 from pathlib import Path
 import torch
 import torch.optim as optim
+import os
+import sys
 import argparse
+
+BATCH_SIZE = 16
+NUM_WORKERS = 0
 
 # --- 기본 경로 설정 ---
 # 이 파일(config.py)의 부모 디렉토리(src)의 부모 디렉토리(Project)를 기준 경로로 설정
-BASE_DIR = Path(__file__).resolve().parent.parent.parent
+try:
+    BASE_DIR = Path(__file__).resolve().parent.parent.parent
+except NameError:
+    # Colab에서 __file__이 없는 경우, 수동 경로 지정
+    BASE_DIR = Path(os.getcwd()).resolve()  # 현재 작업 디렉토리
 
 # --- 데이터 경로 ---
 DATA_DIR = BASE_DIR / "data" / "ai03-level1-project"
 TRAIN_IMAGE_DIR = DATA_DIR / "train_images"
 TEST_IMAGE_DIR = DATA_DIR / "test_images"
-TRAIN_ANNOTATION_DIR = DATA_DIR / "train_annotations" 
+TRAIN_ANNOTATION_DIR = DATA_DIR / "train_annotations"
+
+CSV_TRAIN_DATA_DIR = BASE_DIR / "data_csv"
+FILLTER_CSV_TRAIN_DATA_DIR = CSV_TRAIN_DATA_DIR / "model_train_data_csv"
 
 # --- 결과물 경로 ---
 OUTPUT_DIR = BASE_DIR / "Project" / "outputs"
@@ -44,34 +56,58 @@ def get_device():
 
 # config에서 optimizer 관리하여 실험 용이하게
 def get_optimizer(model, cfg):
-    if cfg.optimizer == "adam":
+    if cfg.optimizer == "Adam":
         return optim.Adam(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
-    elif cfg.optimizer == 'adamw':
+    elif cfg.optimizer == 'AdamW':
          return optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
-    elif cfg.optimizer == "sgd":
+    elif cfg.optimizer == "SGD":
         return optim.SGD(model.parameters(), lr=cfg.lr, momentum=cfg.momentum)
     else:
         raise ValueError(f"Unsupported optimizer: {cfg.optimizer}")
 
+# config에서 learning rate scheduler 관리하여 실험 용이하게
+def get_lr_scheduler(optimizer, cfg):
+    if cfg.lr_scheduler == "StepLR":
+        return optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    elif cfg.lr_scheduler == "CosineAnnealingLR":
+        return optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10, eta_min=0)
+    elif cfg.lr_scheduler == "ReduceLROnPlateau":
+        return optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
+    else:
+        raise ValueError(f"Unsupported learning rate scheduler: {cfg.lr_scheduler}")
+
 # argparse를 이용한 유동적인 하이퍼파라미터 조정
 def get_config():
+    if any(env in sys.modules for env in ['google.colab', 'ipykernel']):
+        sys.argv = ['']  # Jupyter/Colab에서 argparse 충돌 방지
+
     parser = argparse.ArgumentParser(description="Training configuration")
 
     default_device = get_device()
 
     parser.add_argument('--device', type=str, default=default_device, help='Device to use (cuda, mps or cpu)')
-    parser.add_argument('--num_epochs', type=int, default=10, help='Number of training epochs')
+    parser.add_argument('--num_epochs', type=int, default=1000, help='Number of training epochs')
     parser.add_argument('--num_classes', type=int, default=44199, help='Number of classes')
     parser.add_argument('--batch_size', type=int, default=16, help='Batch size for training')
     parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
-    parser.add_argument('--optimizer', type=str, default='adam', help='Optimzer')
-    parser.add_argument('--num_workers', type=int, default=4, help='Number of workers')
+    parser.add_argument('--lrf', type=float, default=0.01, help='Final learning rate (for YOLO)')
+    parser.add_argument('--lr_scheduler', type=str, default='StepLR', help='Learning rate scheduler (StepLR, CosineAnnealingLR, ReduceLROnPlateau)')
+    parser.add_argument('--optimizer', type=str, default='SGD', help='Optimzer (Adam, AdamW, SGD)') # SGD, Adam, AdamW, NAdam, RAdam, RMSProp
+    parser.add_argument('--num_workers', type=int, default=0, help='Number of workers')
     parser.add_argument('--weight_decay', type=float, default=0.0005, help='Weight decay')
     parser.add_argument('--confidence_threshold', type=float, default=0.5, help='Confidence threshold')
-    parser.add_argument('--momentum', type=float, default=0.01, help='Momentum')
+    parser.add_argument('--momentum', type=float, default=0.9, help='Momentum')
+
+    parser.add_argument("--tune", action="store_true", help="use tune hyperparameter search")
+    parser.add_argument("--iterations", type=int, default=100, help="Number of hyperparameter combinations to try during tune")
+    parser.add_argument('--tune_epochs', type=int, default=10, help='Number of tune epochs')
+
+    parser.add_argument("--hyp_path", type=str, default=None, help="Path to a custom hyperparameters YAML file for training")
 
     args = parser.parse_args()
-
+    
+    args.base_dir = BASE_DIR
+    args.data_dir = DATA_DIR
     args.train_image_dir = TRAIN_IMAGE_DIR
     args.test_image_dir = TEST_IMAGE_DIR
     args.annotation_dir = TRAIN_ANNOTATION_DIR

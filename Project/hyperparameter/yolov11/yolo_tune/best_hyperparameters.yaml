@@ -1,0 +1,32 @@
+# 100/100 iterations complete ✅ (36856.76s)
+# Results saved to C:\Users\USER\Documents\GitHub\medication_object_detection_project_team2\Project\outputs\yolo_tune
+# Best fitness=0.97356 observed at iteration 65
+# Best fitness metrics are {'metrics/precision(B)': 0.97995, 'metrics/recall(B)': 0.99266, 'metrics/mAP50(B)': 0.99376, 'metrics/mAP50-95(B)': 0.97131, 'val/box_loss': 0.26186, 'val/cls_loss': 0.19979, 'val/dfl_loss': 0.73665, 'fitness': 0.97356}
+# Best fitness model is C:\Users\USER\Documents\GitHub\medication_object_detection_project_team2\Project\outputs\train65
+# Best fitness hyperparameters are printed below.
+
+lr0: 0.00753
+lrf: 0.05124
+momentum: 0.91234
+weight_decay: 0.00055
+warmup_epochs: 2.45134
+warmup_momentum: 0.95
+warmup_bias_lr: 0.11316
+box: 8.0
+cls: 0.59995
+dfl: 1.40593
+hsv_h: 0.0
+hsv_s: 0.0
+hsv_v: 0.0
+degrees: 0.0
+translate: 0.0
+scale: 0.0
+shear: 0.0
+perspective: 0.0
+flipud: 0.0
+fliplr: 0.0
+mosaic: 0.0
+mixup: 0.0
+copy_paste: 0.0
+cutmix: 0.0
+bgr: 0.0

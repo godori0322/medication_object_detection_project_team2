@@ -1,12 +1,31 @@
 # src/train.py
 
 import torch
+import pandas as pd
 from tqdm import tqdm
 from pathlib import Path
+from torchmetrics.detection.mean_ap import MeanAveragePrecision
 
-from src.config import get_optimizer
-from .utils.logger import create_experiment_dir, Logger
-from .utils.visualizer import save_loss_curve
+from src.config import get_optimizer, get_lr_scheduler
+from ..utils.logger import create_experiment_dir, Logger
+from ..utils.visualizer import save_loss_curve
+
+def validate_metrics_epoch(model, val_loader, device):
+    model.eval()
+    metric = MeanAveragePrecision(class_metrics=True, max_detection_thresholds=[4, 10])
+    
+    with torch.no_grad():
+        for images, targets in val_loader:
+            images = [img.to(device) for img in images]
+            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+            outputs = model(images)
+            
+            # torchmetrics는 dict(list[Tensor]) 형식을 요구함
+            # 즉, targets: list[dict], outputs: list[dict] → 그대로 사용 가능
+            metric.update(outputs, targets)
+    
+    return metric.compute()  # dict 형태로 반환 (mAP, recall, precision 등 포함)
 
 def train_epoch(model, train_loader, optimizer, device, epoch, num_epochs):
     model.train()
@@ -45,7 +64,26 @@ def validate_epoch(model, val_loader, device):
     
     return total_loss / len(val_loader)
 
-def train_model(model, train_loader, val_loader, cfg):
+def validate_loss_epoch(model, val_loader, device):
+    model.train()  # loss 계산을 위해 train 모드
+    total_loss = 0
+
+    with torch.no_grad():
+        for images, targets in val_loader:
+            images = [img.to(device) for img in images]
+            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+            loss_dict = model(images, targets)  # loss 반환
+
+            losses = sum(
+                v.item() for v in loss_dict.values()
+                if torch.is_tensor(v) and v.dim() == 0
+            )
+            total_loss += losses
+
+    return total_loss / len(val_loader)
+
+def train_pytorch(model, train_loader, val_loader, cfg):
     """
     모델 학습 함수
     
@@ -77,6 +115,8 @@ def train_model(model, train_loader, val_loader, cfg):
         "num_classes": cfg.num_classes, 
         "batch_size": cfg.batch_size,
         "lr": cfg.lr,
+        "lrf": cfg.lrf,
+        "lr_scheduler": cfg.lr_scheduler,
         "optimizer": cfg.optimizer,
         "num_workers": cfg.num_workers, 
         "weight_decay": cfg.weight_decay,
@@ -87,6 +127,9 @@ def train_model(model, train_loader, val_loader, cfg):
 
     # 옵티마이저 생성
     optimizer = get_optimizer(model, cfg)
+
+    # 학습률 스케줄러 생성
+    scheduler = get_lr_scheduler(optimizer, cfg)
 
     model_name = model.__class__.__name__
     optimizer_type = type(optimizer).__name__
@@ -117,19 +160,45 @@ def train_model(model, train_loader, val_loader, cfg):
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
+    metrics_log = []  # <- 성능 기록용 리스트
+
     for epoch in range(cfg.num_epochs):
         avg_train_loss = train_epoch(model, train_loader, optimizer, cfg.device, epoch, cfg.num_epochs)
-        avg_val_loss = validate_epoch(model, val_loader, cfg.device)
-        
+        avg_val_loss = validate_loss_epoch(model, val_loader, cfg.device)
+        metrics = validate_metrics_epoch(model, val_loader, cfg.device)
+
         train_losses.append(avg_train_loss)
         val_losses.append(avg_val_loss)
         
-        print(f"Epoch {epoch+1}: Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
+        # 현재 learning rate 로그 출력(mAP 제외)
+        current_lr = optimizer.param_groups[0]['lr']
+        print(f"Epoch {epoch+1}/{cfg.num_epochs} | LR: {current_lr:.6f} | Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
 
+        # 저장용 dict 생성
+        metrics_log.append({
+            "epoch": epoch + 1,
+            "train_loss": avg_train_loss,
+            "val_loss": avg_val_loss
+        })
+
+        # best model 저장
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
             torch.save(model.state_dict(), checkpoint_path)
             print(f"모델저장. validation loss: {best_val_loss:.4f}")
+
+        # 스케줄러 step
+        if scheduler:
+            if cfg.lr_scheduler == 'ReduceLROnPlateau':
+                scheduler.step(avg_val_loss)
+            else:
+                scheduler.step()
+
+    # 성능 기록 CSV로 저장
+    metrics_df = pd.DataFrame(metrics_log)
+    metrics_csv_path = cfg.output_dir / f"{model_name}_metrics.csv"
+    metrics_df.to_csv(metrics_csv_path, index=False)
+    print(f"[✓] Validation 성능 기록 저장 완료: {metrics_csv_path}")
 
     # 손실 곡선 저장
     loss_curve_path = cfg.output_dir / f"{model_name}_loss_curve.png"
@@ -137,6 +206,25 @@ def train_model(model, train_loader, val_loader, cfg):
     
     # 손실 저장
     logger.save_loss_history_csv(train_losses, val_losses)
+
+    # Best 모델 mAP/mAR 계산
+    print("[✓] Best 모델 성능 평가 중...")
+    best_model = model
+    best_model.load_state_dict(torch.load(checkpoint_path, map_location=cfg.device))
+    best_model = best_model.to(cfg.device)
+    best_metrics = validate_metrics_epoch(best_model, val_loader, cfg.device)
+
+    # CSV로 저장
+    best_metrics_dict = {
+        "mAP": best_metrics["map"].item(),
+        "mAP@50": best_metrics["map_50"].item(),
+        "mAR@4": best_metrics["mar_4"].item(),
+        "mAR@10": best_metrics["mar_10"].item()
+    }
+    best_metrics_df = pd.DataFrame([best_metrics_dict])
+    best_metrics_csv_path = cfg.output_dir / f"{model_name}_best_PR.csv"
+    best_metrics_df.to_csv(best_metrics_csv_path, index=False)
+    print(f"[✓] Best 모델 성능(mAP/mAR) 저장 완료: {best_metrics_csv_path}")
 
     print(f"{model_name.upper()} 모델 학습 완료")
     return model
