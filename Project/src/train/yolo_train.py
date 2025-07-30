@@ -84,7 +84,8 @@ def train_yolo(model: YOLO, cfg) -> YOLO:
         # "auto_augment":     "auto_augment",    # 증강 최적화
         # "copy_paste_mode":  "mixup",           # mixup 모드
         # 기타
-        # "close_mosaic":     20,                # mosaic 종료 epoch
+        # "close_mosaic":     10,                # mosaic 종료 epoch
+        # optimize:           True,              # 그래프 최적화
         **hyperparams,                         # 튜닝/파일/기본 파라미터
     }
 
