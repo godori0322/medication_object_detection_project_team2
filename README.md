@@ -3,7 +3,7 @@
 ## 협업일지 링크
 - [고인범](https://www.notion.so/_-23fbc32ff87180ddb1c0ea8614c7bbb9?source=copy_link)
 
-- [김도영]() 
+- [김도영](https://github.com/godori0322/medication_object_detection_project_team2/blob/main/%ED%98%91%EC%97%85%EC%9D%BC%EC%A7%80_%EA%B9%80%EB%8F%84%EC%98%81/Daily_%ED%98%91%EC%97%85%EC%9D%BC%EC%A7%80_250715.pdf) 
 
 - [김재용](https://www.notion.so/2314e8731dd980a8984ed33e4e5faa1f)
 
