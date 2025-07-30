@@ -4,11 +4,20 @@ import torch
 import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
-from src.utils.boxes import coco_to_voc
-from src.utils.tensor_utils import safe_tensor
 
 import torch
 from torch.utils.data import Dataset
+
+
+def coco_to_voc(boxes):
+    if len(boxes) == 0:
+        return boxes
+    return np.array([[x, y, x + w, y + h] for x, y, w, h in boxes])
+
+
+def safe_tensor(data, shape, dtype):
+    return torch.as_tensor(data, dtype=dtype) if len(data) else torch.zeros(shape, dtype=dtype)
+
 
 
 #datasets/pill_dataset.py

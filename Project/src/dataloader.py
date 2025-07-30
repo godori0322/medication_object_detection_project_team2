@@ -2,8 +2,19 @@ from sklearn.model_selection import train_test_split
 from torch.utils.data import DataLoader
 from src.dataset import PillDataset, PillTestDataset
 from src.transforms import get_train_transforms, get_valid_transforms, get_test_transforms
-from src.utils.tensor_utils import collate_fn, test_collate_fn
 from src.utils.data_utils import load_filtered_df, load_mappings
+import torch
+
+
+def collate_fn(batch):
+    return tuple(zip(*batch))
+
+def test_collate_fn(batch):
+    images = [item[0] for item in batch]
+    targets = [item[1] for item in batch]
+    images = torch.stack(images)
+    return images, targets
+
 
 def create_dataloaders(cfg):
     print("Loading data...")
