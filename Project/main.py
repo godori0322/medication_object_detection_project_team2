@@ -1,4 +1,7 @@
 # src/main.py
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt 
 from src.models import yolo_v5, yolo_v8, yolo_v11, faster_rcnn, ssd
 from src.train import train_model
 from src.test import run_test

@@ -15,18 +15,18 @@ warmup_bias_lr: 0.11316
 box: 8.0
 cls: 0.59995
 dfl: 1.40593
-hsv_h: 0.015          # defalut=0.015
-# hsv_s: 0.0          # defalut=0.7 
-# hsv_v: 0.0          # defalut=0.4 
-# degrees: 0.0        # defalut=0.0   
-# translate: 0.0      # defalut=0.1
-# scale: 0.0          # defalut=0.5
-# shear: 0.0          # defalut=0.0
-# perspective: 0.0    # defalut=0.0       
-flipud: 0.1           # defalut=0.0
-fliplr: 0.0           # defalut=0.5
-# mosaic: 0.0         # defalut=1.0  
-# mixup: 0.0          # defalut=0.0 
-# copy_paste: 0.0     # defalut=0.0      
-# cutmix: 0.0         # defalut=0.0  
-# bgr: 0.0            # defalut=0.0
+hsv_h: 0.0
+hsv_s: 0.0
+hsv_v: 0.0
+degrees: 0.0
+translate: 0.0
+scale: 0.0
+shear: 0.0
+perspective: 0.0
+flipud: 0.0
+fliplr: 0.0
+mosaic: 0.0
+mixup: 0.0
+copy_paste: 0.0
+cutmix: 0.0
+bgr: 0.0
